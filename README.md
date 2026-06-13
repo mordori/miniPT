@@ -1,4 +1,4 @@
-# miniRT
+# miniPT
 ## Introduction
 **High-Performance CPU Path Tracer with Quasi-Monte Carlo Integration.**
 
