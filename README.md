@@ -163,6 +163,7 @@ Saved renders are stored in `📁renders/`.
 
 ## Project Review
 - Documentation under construction
+- This reposity has been pruned. If you wish to view the commit history, visit https://github.com/mordori/miniRT
 
 ## Resources
 Path tracing
