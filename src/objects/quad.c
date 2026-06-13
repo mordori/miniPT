@@ -1,0 +1,105 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   quad.c                                             :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: wshoweky <wshoweky@student.hive.fi>        +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2026/03/10 19:47:18 by wshoweky          #+#    #+#             */
+/*   Updated: 2026/03/10 19:47:21 by wshoweky         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
+#include <stdint.h>
+
+#include "defines.h"
+#include "objects.h"
+
+static inline void quad_init_helper(t_quad* quad, t_mat4* world_to_obj);
+
+/*
+** Initialize a quad (parallelogram) and add it to the scene.
+**
+** A quad is defined by a corner point Q and two edge vectors u and v.
+** The surface spans: P(α,β) = Q + α*u + β*v, where α,β ∈ [0,1].
+**
+** Precomputed: normal, w (parametric coord helper), d ( const), area.
+*/
+t_error init_quad(t_context* ctx, t_quad* quad, uint32_t mat_id) {
+	t_vec3 n_cross = vec3_cross(quad->u, quad->v);
+	float n_len_sq = vec3_dot(n_cross, n_cross);
+	if (n_len_sq < G_EPSILON)
+		return E_RANGE;
+
+	t_object obj = (t_object){ 0 };
+	obj.type = OBJ_QUAD;
+	obj.material_id = mat_id;
+	obj.transform.pos = vec3_add(quad->q, vec3_scale(vec3_add(quad->u, quad->v), 0.5f));
+	obj.transform.rot = quat_from_dir(vec3_normalize(n_cross));
+	t_mat4 world_to_obj = quat_to_mat4(obj.transform.rot);
+	world_to_obj = mat4_transpose(&world_to_obj);
+	quad_init_helper(quad, &world_to_obj);
+	obj.shape.quad = *quad;
+	return add_object(ctx, &obj, false);
+}
+
+static inline void quad_init_helper(t_quad* quad, t_mat4* world_to_obj) {
+	quad->u = mat4_mul_vec3(world_to_obj, quad->u);
+	quad->v = mat4_mul_vec3(world_to_obj, quad->v);
+	quad->q = vec3_scale(vec3_add(quad->u, quad->v), -0.5f);
+	quad->d = 0.0f;
+
+	t_vec3 n_cross = vec3_cross(quad->u, quad->v);
+	float n_len_sq = vec3_dot(n_cross, n_cross);
+	quad->area = sqrtf(n_len_sq);
+	quad->normal = vec3_scale(n_cross, 1.0f / quad->area);
+	quad->w = vec3_scale(n_cross, 1.0f / n_len_sq);
+	quad->vec_alpha = vec3_cross(quad->v, quad->w);
+	quad->vec_beta = vec3_cross(quad->w, quad->u);
+}
+
+/*
+** Check if ray- hit point lies within the quad parallelogram.
+** Uses Cramer's rule: α = dot(w, cross(p, v)), β = dot(w, cross(u, p)).
+** α,β ∈ [0,1] means inside. They also become the UV coordinates.
+*/
+static bool quad_hit_record(const t_quad* quad, const t_ray* ray, t_hit* hit, float t) {
+	hit->point = vec3_add(ray->origin, vec3_scale(ray->dir, t));
+	t_vec3 p = vec3_sub(hit->point, quad->q);
+	float alpha = vec3_dot(quad->vec_alpha, p);
+	if (alpha < 0.0f || alpha > 1.0f)
+		return false;
+
+	float beta = vec3_dot(quad->vec_beta, p);
+	if (beta < 0.0f || beta > 1.0f)
+		return false;
+
+	hit->t = t;
+	hit->normal = quad->normal;
+	if (vec3_dot(quad->normal, ray->dir) > 0)
+		hit->normal = vec3_scale(hit->normal, -1.0f);
+	hit->uv = vec2(alpha, beta);
+	hit->tangent = vec3_normalize(quad->u);
+	hit->bitangent = vec3_normalize(quad->v);
+	return true;
+}
+
+/*
+** Ray-quad intersection: intersect the , then bounds-check.
+*/
+bool hit_quad(const t_shape* shape, const t_ray* ray, t_hit* hit, uint32_t flags) {
+	const t_quad* quad = &shape->quad;
+	float denom = vec3_dot(quad->normal, ray->dir);
+	if (flags & MAT_DOUBLE_SIDED) {
+		if (fabsf(denom) < G_EPSILON)
+			return false;
+	} else if (denom > -G_EPSILON) {
+		return false;
+	}
+
+	float t = -vec3_dot(quad->normal, ray->origin) / denom;
+	if (t < G_EPSILON || t >= hit->t)
+		return false;
+
+	return quad_hit_record(quad, ray, hit, t);
+}

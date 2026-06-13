@@ -1,0 +1,13 @@
+#.gitignore
+.vscode/
+dep/
+obj/
+renders/
+lib/MLX42/build
+*.o
+*.d
+libft.a
+.cache/
+miniPT
+compile_commands.json
+imgui.ini

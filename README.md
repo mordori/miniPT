@@ -1,0 +1,224 @@
+# miniRT
+## Introduction
+**High-Performance CPU Path Tracer with Quasi-Monte Carlo Integration.**
+
+<p align="center">
+	<img src="doc/ball.gif" alt="Demo" />
+</p>
+
+<table align="center">
+  <tr>
+    <td><img src="doc/bunny.png" alt="Demo 1" width="100%"/></td>
+    <td><img src="doc/tortoise.png" alt="Demo 2" width="100%"/></td>
+  </tr>
+</table>
+
+## Features
+- Quasi-Monte Carlo integration with multiple importance sampling for Global Illumination
+- BVH acceleration structure for rapid intersection testing
+- Modest post-processing stack with ACES-calibrated tonemapping
+- High-performance CPU parallelism with multi-threading, memory efficiency, and systems-level optimisations enabling vectorisation of data
+- Modern PBR pipeline with microfacet BSDF
+- Bilinear texture filtering and normal mapping
+- Physical camera with fly and turntable controllers
+- Object Edit Mode with simplified lighting inspired by Blender
+- Integrates Intel Open Image Denoise for cleaning up the remaining noise from the completed render
+- Loads meshes in .obj format and the objects are instantiated
+- Utilizes Dear ImGui for scene controls and various object/material parameters
+
+> [!NOTE]
+> You can drop your own .obj models in `📁assets/models/` and they will become available to instantiate from `Add Object->Mesh` dropdown menu.
+
+#### TODO
+- Anisotropic & clear coat BRDF
+- BTDF for BSDF
+- Improve the naive median-split BVH
+
+#### Future Work
+- Support for MacOS and Apple Silicon
+- Image based lighting
+- EV100 exposure triangle
+
+## Physically Based Rendering
+### BSDF
+Principled BSDF, a hybrid material model featuring Disney diffuse and Cook-Torrance specular lobes.
+
+- Implements Dupuy & Benyoub 2023 spherical cap VNDF sampling method for efficient visible microfacet normal generation.
+- Height-correlated Smith G2 visibility and analytically simplified Smith G1 masking to maintain stable 32-bit floating point weights.
+- Firefly mitigation and defense against variance spikes with indirect weight clamping, path roughing, and NaN/Inf sanitisation.
+
+### Camera
+- Physically based lens model with adjustable Focal Length, Focus Distance, and F-Stop.
+- Utilises a simplified manual exposure. Full EV100 exposure triangle integration is planned for future updates.
+
+## Optimisation & Performance
+Implements a highly optimised CPU rendering engine, balancing code readability with raw performance.
+
+By analysing assembly output with GDB and compiler behaviour, several optimisations were implemented to maximise throughput with auto-vectorisation. Building on these performance gains, data structures were vectorised explicitly.
+
+Our approach optimises memory alignment for SIMD (Single Instruction, Multiple Data) execution while delegating most of the instruction selection to the compiler, maintaining a clean codebase.
+
+### Math Utilities
+- Custom high-performance [linear algebra library](https://github.com/mordori/Lib_math) providing SIMD-accelerated, memory-aligned vector and matrix primitives.
+
+### Multi-threading
+-
+
+### BVH
+- Documentation under construction
+
+### Light-weight Edit Mode
+- Simplified lighting calculations with artificial ambient lighting
+
+### Blit
+#### Vectorised Preview Mode
+- Used during the camera movement and in Edit Mode. Achieves pure SIMD execution, processing 4 pixels in parallel per instruction cycle to maximize frame rate at the cost of slight image quality reduction.
+
+#### Pipelined Rendered Mode
+- Leverages loop unrolling to maximize instruction level parallelism. While color channel dependencies limit vectorisation in this stage, unrolling reduces branch prediction overhead and saturates the CPU's superscalar execution.
+
+### Micro-optimisations
+- Invariant caching to local variables to prevent pointer aliasing.
+- Branchless arithmetic to minimise CPU stalls in performance-critical loops.
+- Segregation of write-heavy synchronization primitives from read-only render data to eliminate false sharing and cache line invalidation.
+
+## Quasi-Monte Carlo Integration
+- Documentation under construction
+
+### RNG
+- Documentation under construction
+
+## Prerequisites
+
+- Git LFS extension
+- CMake
+- GLFW
+
+> [!NOTE]
+>
+> Includes [MLX42](https://github.com/codam-coding-college/MLX42), a minimal graphics library required by the subject. It handles window creation, input hooks, and manages a frame buffer to which we copy ours.
+
+> [!IMPORTANT]
+>
+> MacOS / Apple Silicon is not currently supported.
+
+## How to use
+> [!NOTE]
+> The default build configuration targets the Haswell microarchitecture (Intel 2013+ / AMD Ryzen).
+>
+> If you are compiling on legacy hardware, please replace `-march=haswell` with `-msse4.1` in the Makefile to ensure compatibility.
+
+Run the following commands to clone the repository and create `miniPT` program
+``` git
+git clone https://github.com/mordori/miniPT.git miniPT
+cd miniPT
+make
+```
+
+Run the program
+``` bash
+./miniPT
+```
+
+Saved renders are stored in `📁renders/`.
+
+> [!TIP]
+>
+> Adjust the camera's focus distance to desired surfaces easily in Edit Mode when using a larger aperture to produce a shallow depth of field.
+>
+> **Previously accumulated frames are not wasted!**
+>
+> Set the amount of samples lower and find the desired angle for the shot first. Then increment the amount for better image quality.
+>
+> Setting the samples amount to be less than the current frame pauses the rendering. To continue, raise the samples to the previous amount.
+
+## Controls
+### Render Mode
+| Key⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                     | Navigation          ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀  |
+|----------------------------------------------------------------|-----------------------------------------------|
+| <kbd>LMB</kbd>                                                 | Select                                        |
+| <kbd>ALT</kbd> + <kbd>LMB</kbd>                                | Orbit                                         |
+| <kbd>ALT</kbd> + <kbd>LMB</kbd>                                | Zoom                                          |
+| <kbd>ALT</kbd> + <kbd>LMB</kbd>                                | Pan                                           |
+| <kbd>F</kbd>                                                   | Frame                                         |
+| <kbd>Y</kbd>                                                   | Save View                                     |
+| <kbd>T</kbd>                                                   | Apply Saved View                              |
+
+### Edit Mode
+| Key⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                     | Action               ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀  |
+|----------------------------------------------------------------|-----------------------------------------------|
+| <kbd>TAB</kbd>                                                 | Toggle Edit Mode                              |
+| <kbd>LMB</kbd>                                                 | Select / Apply Edit                           |
+| <kbd>RMB</kbd>                                                 | Cancel Edit                                   |
+| <kbd>G</kbd>                                                   | Translate                                     |
+| <kbd>R</kbd>                                                   | Rotate                                        |
+| <kbd>S</kbd>                                                   | Scale                                         |
+| <kbd>X</kbd> / <kbd>Y</kbd> / <kbd>Z</kbd>                     | Axis Constraint                               |
+| <kbd>SHIFT</kbd> + <kbd>X</kbd> / <kbd>Y</kbd> / <kbd>Z</kbd>  | Planar Constraint                             |
+
+### General
+| Key⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                     | Action           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀  |
+|----------------------------------------------------------------|-----------------------------------------------|
+| <kbd>ESC</kbd>                                                 | Quit                                          |
+
+## Project Review
+- Documentation under construction
+
+## Resources
+Path tracing
+- https://raytracing.github.io/
+- https://www.pbr-book.org/
+- https://scratchapixel.com/index.html
+- https://users.aalto.fi/~lehtinj7/CS-E5520/2023/
+- https://jacco.ompf2.com/articles/
+- The Ray Tracer Challenge by Jamis Buck
+
+PBR
+- https://imadrahmoune.com/pbr/
+- https://google.github.io/filament/main/filament.html
+- https://blog.selfshadow.com/publications/s2012-shading-course/burley/s2012_pbs_disney_brdf_notes_v3.pdf
+
+VNDF
+- https://arxiv.org/pdf/2306.05044
+- https://www.youtube.com/watch?v=u7TafvTVmbo
+
+Camera
+- https://digitaldesign.aalto.fi/digital-design-workflows/raster/digital-photography/
+- https://ciechanow.ski/cameras-and-lenses/
+
+Math
+- https://immersivemath.com/ila/index.html
+- https://www.3blue1brown.com/
+- https://betterexplained.com/
+- https://www.wikipedia.org/
+- Multimedia Maths by Bieke Masselis and Ivo De Pauw
+
+Disk
+- https://psgraphics.blogspot.com/2011/01/improved-code-for-concentric-map.html
+
+Blue noise
+- https://momentsingraphics.de/BlueNoise.html
+
+RNG
+- https://www.reedbeta.com/blog/hash-functions-for-gpu-rendering/
+- https://old.reddit.com/r/RNG/comments/jqnq20/the_wang_and_jenkins_integer_hash_functions_just/
+
+QMC
+- https://extremelearning.com.au/unreasonable-effectiveness-of-quasirandom-sequences/
+- https://www.martysmods.com/a-better-r2-sequence/
+
+ACES
+- https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/
+- https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
+
+ONB
+- https://jcgt.org/published/0006/01/01/
+
+Normal maps
+- https://www.shlom.dev/articles/geometry-behind-normal-maps/
+
+Intel Open Image Denoise
+- https://www.openimagedenoise.org/index.html
+
+Stanford 3D scans
+- https://graphics.stanford.edu/data/3Dscanrep/

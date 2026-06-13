@@ -1,0 +1,94 @@
+#include <stdbool.h>
+
+#include "camera.h"
+#include "defines.h"
+
+static inline bool set_cam_state(t_context* ctx);
+
+bool control_camera(t_context* ctx, t_vec2i delta) {
+	const t_cam_state prev_state = ctx->scene.cam.state;
+
+	if (ctx->editor.mode != EDIT_DEFAULT || !set_cam_state(ctx))
+		return false;
+
+	if (!is_cam_action_active(ctx)) {
+		if (prev_state != CAM_DEFAULT)
+			end_cam_action(ctx);
+		return true;
+	}
+
+	if (prev_state != CAM_DEFAULT || ctx->scene.cam.state == CAM_DEFAULT)
+		apply_cam_action(ctx, delta);
+	return true;
+}
+
+void set_default_view(t_context* ctx) {
+	t_camera* cam = &ctx->scene.cam;
+	cam->init_pos = cam->transform.pos;
+	cam->init_rot = cam->transform.rot;
+	cam->init_focal_len_mm = cam->focal_len_mm;
+	cam->init_focus_dist = cam->focus_dist;
+}
+
+bool reset_camera(t_context* ctx) {
+	t_camera* cam = &ctx->scene.cam;
+	cam->transform.pos = cam->init_pos;
+	cam->transform.rot = cam->init_rot;
+	cam->focal_len_mm = cam->init_focal_len_mm;
+	cam->focus_dist = cam->init_focus_dist;
+	cam->f_stop = 16.0f;
+	cam->shutter_speed = 1.0f / 100.0f;
+	cam->iso = 100.0f;
+	cam->distance = vec3_dist(cam->transform.pos, g_zero);
+	update_camera(ctx, cam);
+	cam->control_forward = cam->forward;
+	cam->control_right = cam->right;
+	ctx->renderer.cam = *cam;
+	cam->yaw = atan2f(cam->forward.x, cam->forward.z);
+	cam->pitch = asinf(clampf(cam->forward.y, -1.0f, 1.0f));
+	return true;
+}
+
+bool frame_camera(t_context* ctx, t_object* obj) {
+	if (!obj)
+		return false;
+
+	t_camera* cam = &ctx->scene.cam;
+	t_vec3 half_bounds = vec3_scale(obj->bounds, 0.5f);
+	t_vec3 proj;
+	proj.width = vec3_dot(vec3_fabsf(cam->right), half_bounds);
+	proj.height = vec3_dot(vec3_fabsf(cam->up), half_bounds);
+	proj.depth = vec3_dot(vec3_fabsf(cam->forward), half_bounds);
+	float tan_half_fov = SENSOR_HALF_HEIGHT_MM / ctx->scene.cam.focal_len_mm;
+	t_vec2 dist;
+	dist.height = proj.height / tan_half_fov;
+	dist.width = proj.width / (tan_half_fov * cam->aspect);
+	cam->distance = (fmaxf(dist.height, dist.width) + proj.depth) * 1.1f;
+	cam->transform.pos = vec3_sub(obj->bounds_center, vec3_scale(cam->forward, cam->distance));
+	update_camera(ctx, cam);
+	ctx->renderer.cam = *cam;
+	return true;
+}
+
+static inline bool set_cam_state(t_context* ctx) {
+	if (ctx->scene.cam.state != CAM_DEFAULT)
+		return true;
+
+	t_cam_state state = CAM_DEFAULT;
+	if (mlx_is_key_down(ctx->mlx, MLX_KEY_LEFT_ALT)) {
+		if (mlx_is_mouse_down(ctx->mlx, MLX_MOUSE_BUTTON_LEFT))
+			state = CAM_ORBIT;
+		else if (mlx_is_mouse_down(ctx->mlx, MLX_MOUSE_BUTTON_RIGHT))
+			state = CAM_ZOOM;
+		else if (mlx_is_mouse_down(ctx->mlx, MLX_MOUSE_BUTTON_MIDDLE))
+			state = CAM_PAN;
+	} else if (ctx->renderer.mode != SOLID) {
+		if (mlx_is_mouse_down(ctx->mlx, MLX_MOUSE_BUTTON_RIGHT))
+			state = CAM_TURN;
+	}
+	if (state != CAM_DEFAULT) {
+		begin_cam_action(ctx, state);
+		return true;
+	}
+	return false;
+}

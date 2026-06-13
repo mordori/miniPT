@@ -1,0 +1,90 @@
+#include "defines.h"
+#include "input.h"
+#include "materials.h"
+#include "rendering.h"
+#include "scene.h"
+#include "ui.hpp"
+#include "utils.h"
+
+static inline void initialize(t_context* ctx);
+
+void* g_ui_ctx = NULL;
+
+/**
+ * @brief	Entry point to the program.
+ * @mainpage
+ *
+ * @author		Mika Yli-Pentti		https://github.com/mordori
+ * @author		Wassem Showeky		https://github.com/wshoweky
+ */
+int main(void) {
+	_MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+	_MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
+
+	t_context ctx = { 0 };
+	g_ui_ctx = &ctx;
+	initialize(&ctx);
+	try_write(&ctx, STDOUT_FILENO, "\033[?25h\n\nGoodbye!\n\n");
+	clean_context(&ctx);
+	return EXIT_SUCCESS;
+}
+
+static inline void initialize(t_context* ctx) {
+	init_scene(ctx);
+	ctx->mlx = mlx_init(WIDTH + UI_WIDTH, HEIGHT + UI_BOTTOM, "miniPT", true);
+	if (!ctx->mlx)
+		fatal_error(ctx, errors(ERR_MLXINIT), __FILE__, __LINE__);
+	ctx->img = mlx_new_image(ctx->mlx, ctx->mlx->width - UI_WIDTH, ctx->mlx->height - UI_BOTTOM);
+	if (!ctx->img || mlx_image_to_window(ctx->mlx, ctx->img, 0, 0) == ERROR)
+		fatal_error(ctx, errors(ERR_IMGINIT), __FILE__, __LINE__);
+	mlx_key_hook(ctx->mlx, key_hook, ctx);
+	mlx_mouse_hook(ctx->mlx, mouse_hook, ctx);
+	mlx_resize_hook(ctx->mlx, resize_hook, ctx);
+	if (!init_renderer(ctx))
+		return;
+	init_ui();
+	resize_hook(ctx->img->width, ctx->img->height, ctx);
+	resize_window(ctx);
+	mlx_loop_hook(ctx->mlx, frame_loop, ctx);
+	mlx_loop(ctx->mlx);
+	cleanup_ui();
+	stop_render(&ctx->renderer);
+}
+
+// TODO: clean parse
+void clean_context(t_context* ctx) {
+	t_renderer* r = &ctx->renderer;
+	if (r->oidn_filter)
+		oidnReleaseFilter(r->oidn_filter);
+	if (r->oidn_filter_fast)
+		oidnReleaseFilter(r->oidn_filter_fast);
+	if (r->oidn_normal)
+		oidnReleaseBuffer(r->oidn_normal);
+	if (r->oidn_albedo)
+		oidnReleaseBuffer(r->oidn_albedo);
+	if (r->oidn_buffer)
+		oidnReleaseBuffer(r->oidn_buffer);
+	if (r->oidn_device)
+		oidnReleaseDevice(r->oidn_device);
+	stop_render(r);
+	while (r->threads_init--)
+		pthread_join(r->threads[r->threads_init], NULL);
+	if (r->init_cond)
+		pthread_cond_destroy(&r->cond);
+	if (r->init_mutex)
+		pthread_mutex_destroy(&r->mutex);
+	free(r->threads);
+	clean_scene(ctx);
+	free_texture(&ctx->tex_bn);
+	free(r->buffer);
+	free(r->denoise_buffer);
+	free(r->albedo_buffer);
+	free(r->normal_buffer);
+	free(ctx->editor.selection_mask);
+	if (ctx->editor.selected_obj && ctx->renderer.mode == SOLID)
+		free(ctx->editor.selected_obj);
+	if (ctx->img)
+		mlx_delete_image(ctx->mlx, ctx->img);
+	if (ctx->mlx)
+		mlx_terminate(ctx->mlx);
+}
