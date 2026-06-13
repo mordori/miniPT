@@ -1,5 +1,4 @@
 # miniPT
-## Introduction
 **High-Performance CPU Path Tracer with Quasi-Monte Carlo Integration.**
 
 <p align="center">
@@ -20,16 +19,14 @@
 - High-performance CPU parallelism with multi-threading, memory efficiency, and systems-level optimisations enabling vectorisation of data
 - Modern PBR pipeline with microfacet BSDF
 - Bilinear texture filtering and normal mapping
-- Physical camera with fly and turntable controllers
+- Physical camera with turntable controller
 - Object Edit Mode with simplified lighting inspired by Blender
 - Integrates Intel Open Image Denoise for cleaning up the remaining noise from the completed render
 - Loads meshes in .obj format and the objects are instantiated
 - Utilizes Dear ImGui for scene controls and various object/material parameters
 
-> [!NOTE]
-> You can drop your own .obj models in `📁assets/models/` and they will become available to instantiate from `Add Object->Mesh` dropdown menu.
-
 #### TODO
+- UI improvements
 - Anisotropic & clear coat BRDF
 - BTDF for BSDF
 - Improve the naive median-split BVH
@@ -62,20 +59,20 @@ Our approach optimises memory alignment for SIMD (Single Instruction, Multiple D
 - Custom high-performance [linear algebra library](https://github.com/mordori/Lib_math) providing SIMD-accelerated, memory-aligned vector and matrix primitives.
 
 ### Multi-threading
--
+- Documentation under construction
 
 ### BVH
 - Documentation under construction
 
 ### Light-weight Edit Mode
-- Simplified lighting calculations with artificial ambient lighting
+- Simplified ray and lighting calculations with artificial ambient lighting for smooth scene composition.
 
-### Blit
+### Pixel Processing
 #### Vectorised Preview Mode
 - Used during the camera movement and in Edit Mode. Achieves pure SIMD execution, processing 4 pixels in parallel per instruction cycle to maximize frame rate at the cost of slight image quality reduction.
 
 #### Pipelined Rendered Mode
-- Leverages loop unrolling to maximize instruction level parallelism. While color channel dependencies limit vectorisation in this stage, unrolling reduces branch prediction overhead and saturates the CPU's superscalar execution.
+- Leverages compiler optimization options to maximize instruction level parallelism. While color channel dependencies limit vectorisation in this stage, unrolling reduces branch prediction overhead and saturates the CPU's superscalar execution.
 
 ### Micro-optimisations
 - Invariant caching to local variables to prevent pointer aliasing.
@@ -155,6 +152,8 @@ Saved renders are stored in `📁renders/`.
 | <kbd>S</kbd>                                                   | Scale                                         |
 | <kbd>X</kbd> / <kbd>Y</kbd> / <kbd>Z</kbd>                     | Axis Constraint                               |
 | <kbd>SHIFT</kbd> + <kbd>X</kbd> / <kbd>Y</kbd> / <kbd>Z</kbd>  | Planar Constraint                             |
+| <kbd>SHIFT</kbd> + <kbd>D</kbd>                                | Duplicate                                     |
+| <kbd>DEL</kbd>                                                 | Delete                                        |
 
 ### General
 | Key⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                     | Action           ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀  |

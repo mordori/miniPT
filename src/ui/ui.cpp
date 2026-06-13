@@ -194,8 +194,9 @@ void render_ui(void* param) {
 					ImVec2 button_size(-FLT_MIN, 0.0f);
 
 					ImGui::TableNextColumn();
+					ImGui::BeginDisabled();
 					if (ImGui::Button("Area", button_size)) {}
-
+					ImGui::EndDisabled();
 					ImGui::EndTable();
 				}
 			}
@@ -272,6 +273,12 @@ void render_ui(void* param) {
 					g_ui_dirty |= ImGui::IsMouseDragging(ImGuiMouseButton_Left);
 				apply_widget_state();
 				ImGui::EndDisabled();
+
+				ImGui::Spacing();
+				ImGui::Spacing();
+				if (ImGui::SliderFloat("Exposure", &ctx->scene.cam.exposure, 0.0f, 10.0f, "%.2f", cam_flags))
+					g_ui_dirty |= ImGui::IsMouseDragging(ImGuiMouseButton_Left);
+				apply_widget_state();
 			}
 			ImGui::Spacing();
 			ImGui::Spacing();
@@ -317,6 +324,7 @@ void render_ui(void* param) {
 						apply_widget_state();
 					} break;
 					case BG_IMAGE: {
+						ImGui::BeginDisabled();
 						const char* current_tex = ctx->scene.env.skydome.pixels ? "sky.png" : "None";
 						if (ImGui::BeginCombo("Texture", current_tex)) {
 							for (int i = 0; i < ctx->scene.assets.tex_count; i++) {
@@ -331,23 +339,22 @@ void render_ui(void* param) {
 							}
 							ImGui::EndCombo();
 						}
-						if (!ctx->scene.env.has_dir_light)
-							ImGui::BeginDisabled();
-						float temp = ctx->scene.cam.skydome_uv_offset.u * 360.0f;
-						if (ImGui::SliderFloat("Rotate", &temp, 0.0f, 360.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp)) {
-							ctx->scene.cam.skydome_uv_offset.u = temp / 360.0f;
-							if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+						ImGui::EndDisabled();
+						if (ctx->scene.env.has_dir_light) {
+							float temp = ctx->scene.cam.skydome_uv_offset.u * 360.0f;
+							if (ImGui::SliderFloat("Rotate", &temp, 0.0f, 360.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp)) {
+								ctx->scene.cam.skydome_uv_offset.u = temp / 360.0f;
+								if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
+									rotate_skydome(ctx);
+									g_ui_dirty = true;
+								}
+							}
+							if (ImGui::IsItemDeactivatedAfterEdit()) {
 								rotate_skydome(ctx);
 								g_ui_dirty = true;
 							}
+							g_ui_interacting |= (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left));
 						}
-						if (ImGui::IsItemDeactivatedAfterEdit()) {
-							rotate_skydome(ctx);
-							g_ui_dirty = true;
-						}
-						g_ui_interacting |= (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left));
-						if (!ctx->scene.env.has_dir_light)
-							ImGui::EndDisabled();
 					} break;
 					default: break;
 				}
@@ -662,6 +669,7 @@ void render_ui(void* param) {
 						apply_widget_state();
 
 						ImGui::SameLine(0, 30);
+						ImGui::BeginDisabled();
 						if (ImGui::Checkbox("Texture", &obj->mat->is_texture))
 							g_ui_dirty = true;
 						apply_widget_state();
@@ -670,6 +678,7 @@ void render_ui(void* param) {
 							// TODO: tex dropdown
 							apply_widget_state();
 						}
+						ImGui::EndDisabled();
 
 						ImGui::Spacing();
 						ImGui::Spacing();
@@ -685,9 +694,7 @@ void render_ui(void* param) {
 							g_ui_dirty |= ImGui::IsMouseDragging(ImGuiMouseButton_Left);
 						apply_widget_state();
 
-						float ior = obj->mat->ior;
-						if (ImGui::SliderFloat("IOR", &ior, 1.0f, 2.4f, "%.2f", mat_flags)) {
-							// obj->mat->ior = fmaxf(ior, 1.0f);
+						if (ImGui::SliderFloat("IOR", &obj->mat->ior, 1.0f, 2.4f, "%.2f", mat_flags)) {
 							obj->mat->f0_dielectric = vec3_n(reflectance(obj->mat->ior));
 							g_ui_dirty |= ImGui::IsMouseDragging(ImGuiMouseButton_Left);
 						}
@@ -702,6 +709,7 @@ void render_ui(void* param) {
 						ImGui::Spacing();
 						ImGui::Spacing();
 
+						ImGui::BeginDisabled();
 						if (ImGui::Checkbox("Normal Map", &obj->mat->is_normal_map))
 							g_ui_dirty = true;
 						apply_widget_state();
@@ -713,6 +721,7 @@ void render_ui(void* param) {
 								g_ui_dirty |= ImGui::IsMouseDragging(ImGuiMouseButton_Left);
 							apply_widget_state();
 						}
+						ImGui::EndDisabled();
 					}
 					ImGui::Spacing();
 					ImGui::Spacing();

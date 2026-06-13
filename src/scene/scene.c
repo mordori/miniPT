@@ -34,11 +34,11 @@ void init_scene(t_context* ctx) {
 
 	ctx->bn_stride = (BN_CO_U + ((ctx->scene.env.lights.total + 1) * 2) + 3) & ~3;
 
-	ctx->renderer.render_samples = 64;
+	ctx->renderer.render_samples = 32;
 	ctx->renderer.render_bounces = 16;
 
-	t_vec3 pos = vec3(0.0f, 1.3f, -2.7f);
-	t_vec3 dir = vec3_normalize(vec3(0.0f, -0.33f, 1.0f));
+	t_vec3 pos = vec3(0.0f, 0.8f, -2.7f);
+	t_vec3 dir = vec3_normalize(vec3(0.0f, -0.15f, 1.0f));
 	ctx->scene.cam.exposure = 1.2f;
 	ctx->scene.cam.focus_dist = 3.0f;
 	init_camera(ctx, pos, dir, 27.0f);
@@ -78,7 +78,7 @@ void init_scene(t_context* ctx) {
 
 	ctx->scene.env.bg_mode = BG_IMAGE;
 
-	add_mesh(ctx, "dragon.obj", 2, false);
+	add_mesh(ctx, "suzanne.obj", 2, false);
 
 	t_vec3 initial_pos = { { 704000.0f, 484000.0f, 520000.0f, 0.0f } };
 	ctx->scene.cam.skydome_uv_offset.u = 0.5f;

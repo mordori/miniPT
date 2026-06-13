@@ -35,6 +35,8 @@ static inline void print_editing(void) {
 	printf("| S                   | Scale                      |\n");
 	printf("| X / Y / Z           | Axis Constraint            |\n");
 	printf("| SHIFT + X / Y / Z   | Planar Constraint          |\n");
+	printf("| SHIFT + D           | Duplicate                  |\n");
+	printf("| DEL                 | Delete                     |\n");
 	printf("|---------------------|----------------------------|\n");
 	printf("\n");
 }
