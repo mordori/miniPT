@@ -19,8 +19,6 @@ void fatal_error(t_context* ctx, const char* msg, const char* file, int line) {
 		ft_putstr_fd("MLX42: ", STDERR_FILENO);
 		perror(mlx_strerror(mlx_errno));
 	}
-	if (ctx)
-		clean_context(ctx);
 	exit(EXIT_FAILURE);
 }
 
@@ -48,6 +46,7 @@ char* errors(t_err_code code) {
 		"NPOT texture",
 		"make dir failed",
 		"malloc failed",
+		"could not open directory",
 	};
 	// clang-format on
 	return e[code];

@@ -39,8 +39,8 @@ void init_scene(t_context* ctx) {
 
 	t_vec3 pos = vec3(0.0f, 0.8f, -2.7f);
 	t_vec3 dir = vec3_normalize(vec3(0.0f, -0.15f, 1.0f));
-	ctx->scene.cam.exposure = 1.2f;
 	ctx->scene.cam.focus_dist = 3.0f;
+	ctx->scene.cam.exposure = 1.0f;
 	init_camera(ctx, pos, dir, 27.0f);
 
 	t_material mat1 = { //
@@ -93,8 +93,7 @@ void init_scene(t_context* ctx) {
 	update_transform(&dir_light->obj->transform);
 	update_bounds(dir_light->obj);
 
-	if (!init_bvh(ctx))
-		fatal_error(ctx, errors(ERR_BVH), __FILE__, __LINE__);
+	init_bvh(ctx);
 
 	printf("\n\033[1;32mReady!\033[0m\n");
 	printf_init();

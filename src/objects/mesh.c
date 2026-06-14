@@ -7,7 +7,6 @@
 #include <string.h>
 
 #include "defines.h"
-#include "libft_vector.h"
 #include "objects.h"
 #include "scene.h"
 #include "utils.h"
@@ -16,10 +15,8 @@ static inline bool is_obj_file(const char* file);
 
 void load_mesh_dir(t_context* ctx, const char* dir_path) {
 	DIR* dir = opendir(dir_path);
-	if (!dir) {
-		printf("Warning: Could not open directory: %s\n", dir_path);
-		return;
-	}
+	if (!dir)
+		fatal_error(ctx, errors(ERR_DIROPEN), __FILE__, __LINE__);
 
 	char file_path[512];
 	struct dirent* entry;
@@ -72,21 +69,9 @@ void add_mesh(t_context* ctx, const char* name, uint32_t mat_id, bool is_selecte
 		}
 	}
 
-	if (!mesh) {
-		printf("\033[1;31mError: Mesh '%s' not found in loaded assets.\033[0m\n", name);
-		return;
-	}
 	if (mesh->triangle_count == 0 || mesh->bvh_root_idx == 0) {
 		printf("\033[1;31mError: Mesh '%s' data is empty or invalid.\033[0m\n", name);
 		return;
-	}
-	if (mat_id >= ctx->scene.assets.materials.total) {
-		printf("\033[1;33mWarning: Material ID %u not found.\033[0m\n", mat_id);
-		if (ctx->scene.assets.materials.total == 0) {
-			printf("\033[1;31mFatal: No materials exist in the scene!\033[0m\n");
-			return;
-		}
-		mat_id = 0;
 	}
 
 	t_object obj = { //

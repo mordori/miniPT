@@ -32,12 +32,10 @@ static inline void select_obj(t_context* ctx, t_ray* ray, t_hit* hit) {
 	if (hitSelectedObj || hit->obj == ctx->scene.env.dir_light.obj)
 		return;
 
-	bool rebuild_bvh = false;
-	if (ctx->renderer.mode == SOLID) {
-		if (ctx->editor.selected_obj)
-			rebuild_bvh = vector_try_add(ctx, &ctx->scene.geo.objs, ctx->editor.selected_obj);
-		rebuild_bvh = vector_remove(&ctx->scene.geo.objs, hit->obj);
-	}
+	if (ctx->editor.selected_obj)
+		vector_try_add(ctx, &ctx->scene.geo.objs, ctx->editor.selected_obj);
+	vector_remove(&ctx->scene.geo.objs, hit->obj);
+	init_bvh(ctx);
 
 	ctx->editor.selected_obj = hit->obj;
 	ctx->scene.cam.distance = fmaxf(vec3_dist(ctx->scene.cam.transform.pos, hit->obj->transform.pos), 0.01f);
@@ -49,11 +47,6 @@ static inline void select_obj(t_context* ctx, t_ray* ray, t_hit* hit) {
 			break;
 		}
 	}
-
-	if (rebuild_bvh && !init_bvh(ctx)) {
-		pthread_mutex_unlock(&ctx->renderer.mutex);
-		fatal_error(ctx, errors(ERR_BVH), __FILE__, __LINE__);
-	}
 	ctx->editor.request_obj_tab = true;
 }
 
@@ -62,18 +55,11 @@ bool deselect_object(t_context* ctx) {
 	if (!obj)
 		return false;
 
-	t_renderer* r = &ctx->renderer;
-
 	if (ctx->editor.mode != EDIT_DEFAULT)
 		cancel_edit_action(ctx);
 	ctx->editor.selected_obj = NULL;
 
-	if (r->mode == SOLID) {
-		vector_try_add(ctx, &ctx->scene.geo.objs, obj);
-		if (!init_bvh(ctx)) {
-			pthread_mutex_unlock(&r->mutex);
-			fatal_error(ctx, errors(ERR_BVH), __FILE__, __LINE__);
-		}
-	}
+	vector_try_add(ctx, &ctx->scene.geo.objs, obj);
+	init_bvh(ctx);
 	return true;
 }

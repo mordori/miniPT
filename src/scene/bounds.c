@@ -7,7 +7,6 @@ static inline t_aabb combine_aabb(const t_aabb* a, const t_aabb* b);
 static inline t_aabb aabb_object_to_world(t_aabb aabb, const t_mat4* object_to_world);
 
 static inline t_aabb sphere_bounds(const t_object* obj);
-static inline t_aabb quad_bounds(const t_object* obj);
 
 static inline t_aabb triangle_bounds(const t_triangle* tri);
 
@@ -30,7 +29,6 @@ t_aabb get_object_bounds(const t_object* obj) {
 	t_aabb res = { 0 };
 	switch (obj->type) {
 		case OBJ_SPHERE: res = sphere_bounds(obj); break;
-		case OBJ_QUAD: res = quad_bounds(obj); break;
 		case OBJ_MESH: {
 			t_bvh_node root = obj->shape.mesh.bvh_nodes[obj->shape.mesh.bvh_root_idx - 1];
 			res = aabb_object_to_world(root.aabb, &obj->transform.object_to_world);
@@ -84,20 +82,6 @@ static inline t_aabb sphere_bounds(const t_object* obj) {
 		.min = vec3_n(-obj->shape.sphere.radius),
 		.max = vec3_n(obj->shape.sphere.radius)
 	};
-	return aabb_object_to_world(aabb, &obj->transform.object_to_world);
-}
-
-static inline t_aabb quad_bounds(const t_object* obj) {
-	t_quad quad = obj->shape.quad;
-	t_vec3 p1 = vec3_add(quad.q, quad.u);
-	t_vec3 p2 = vec3_add(quad.q, quad.v);
-	t_vec3 p3 = vec3_add(p1, quad.v);
-	t_aabb aabb = { //
-		.min.v = _mm_min_ps(_mm_min_ps(quad.q.v, p1.v), _mm_min_ps(p2.v, p3.v)),
-		.max.v = _mm_max_ps(_mm_max_ps(quad.q.v, p1.v), _mm_max_ps(p2.v, p3.v))
-	};
-	aabb.min = vec3_sub(aabb.min, vec3_n(B_EPSILON));
-	aabb.max = vec3_add(aabb.max, vec3_n(B_EPSILON));
 	return aabb_object_to_world(aabb, &obj->transform.object_to_world);
 }
 

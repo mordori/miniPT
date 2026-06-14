@@ -2,9 +2,8 @@
 #define MATERIALS_H
 
 #include "defines.h"
-#include "parsing.h"
 
-t_error new_material(t_context* ctx, t_material* mat);
+void new_material(t_context* ctx, t_material* mat);
 void set_material_data(t_path* path);
 void set_shader_data(t_path* path);
 

@@ -465,7 +465,6 @@ void render_ui(void* param) {
 					switch (obj->type) {
 						case OBJ_MESH: base = obj->shape.mesh.name; break;
 						case OBJ_SPHERE: base = "Sphere"; break;
-						case OBJ_QUAD: base = "Quad"; break;
 						default: break;
 					}
 				}
@@ -482,29 +481,6 @@ void render_ui(void* param) {
 					ImGui::Spacing();
 					ImGui::Spacing();
 					bool update = false;
-
-					if (ctx->renderer.mode != SOLID) {
-						if (ImGui::Button("Edit Mode")) {
-							atomic_store(&r->render_cancel, true);
-							pthread_mutex_lock(&r->mutex);
-							while (r->threads_running)
-								pthread_cond_wait(&r->cond, &r->mutex);
-							r->mode = SOLID;
-							if (ctx->editor.selected_obj) {
-								vector_remove(&ctx->scene.geo.objs, ctx->editor.selected_obj);
-								if (!init_bvh(ctx)) {
-									pthread_mutex_unlock(&ctx->renderer.mutex);
-									fatal_error(ctx, errors(ERR_BVH), __FILE__, __LINE__);
-								}
-								ctx->editor.selection_time = engine_time();
-							}
-							pthread_mutex_unlock(&r->mutex);
-						} else {
-							ImGui::BeginDisabled();
-						}
-						ImGui::Spacing();
-						ImGui::Spacing();
-					}
 
 					ImGui::Text("Position");
 					if (ImGui::DragFloat3("##pos", (float*)&obj->transform.pos, 0.005f)) {
@@ -556,9 +532,6 @@ void render_ui(void* param) {
 						g_ui_transform_dirty = true;
 						g_ui_dirty = true;
 					}
-
-					if (ctx->renderer.mode != SOLID)
-						ImGui::EndDisabled();
 				}
 				ImGui::Spacing();
 				ImGui::Spacing();
@@ -603,10 +576,10 @@ void render_ui(void* param) {
 							while (r->threads_running)
 								pthread_cond_wait(&r->cond, &r->mutex);
 
-							if (new_material(ctx, &clone) == E_OK) {
-								obj->material_id = ctx->scene.assets.materials.total - 1;
-								obj->mat = ((t_material**)ctx->scene.assets.materials.items)[obj->material_id];
-							}
+							new_material(ctx, &clone);
+							obj->material_id = ctx->scene.assets.materials.total - 1;
+							obj->mat = ((t_material**)ctx->scene.assets.materials.items)[obj->material_id];
+
 							pthread_mutex_unlock(&r->mutex);
 							g_ui_dirty = true;
 						}

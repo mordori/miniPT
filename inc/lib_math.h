@@ -173,8 +173,8 @@ union u_color {
 #pragma endregion
 
 #pragma region forward declarations
-static inline int ft_imax(int a, int b);
-static inline int ft_imin(int a, int b);
+static inline int32_t ft_imax(int32_t a, int32_t b);
+static inline int32_t ft_imin(int32_t a, int32_t b);
 static inline float ft_lerp(float a, float b, float t);
 static inline float ft_lerp_fast(float a, float b, float t);
 static inline float ft_normalize(float value, float min, float max);
@@ -196,8 +196,8 @@ static inline float mat3_det(const t_mat3* src);
 // mat4
 // -----------------------------------------------------------------
 static inline bool mat4_inverse(const t_mat4* src, t_mat4* out);
-static inline t_mat3 mat4_sub(const t_mat4* src, int skip_r, int skip_c);
-static inline float mat4_cofactor(const t_mat4* src, int row, int col);
+static inline t_mat3 mat4_sub(const t_mat4* src, int32_t skip_r, int32_t skip_c);
+static inline float mat4_cofactor(const t_mat4* src, int32_t row, int32_t col);
 static inline float mat4_det(const t_mat4* src);
 static inline t_mat4 mat4_identity(void);
 static inline t_mat4 mat4_transpose(const t_mat4* m);
@@ -354,7 +354,7 @@ static inline t_vec2i vec2i_sub(t_vec2i a, t_vec2i b) {
 }
 
 static inline t_vec2i vec2i_scale(t_vec2i vec, float s) {
-	return (t_vec2i){ (int)((float)vec.x * s), (int)((float)vec.y * s) };
+	return (t_vec2i){ (int32_t)((float)vec.x * s), (int32_t)((float)vec.y * s) };
 }
 
 static inline t_vec2i vec2i_f(float x, float y) {
@@ -611,7 +611,7 @@ static inline t_mat4 mat4_transpose(const t_mat4* src) {
 
 static inline t_mat4 mat4_mul(const t_mat4* a, const t_mat4* b) {
 	t_mat4 res;
-	int i = 0;
+	int32_t i = 0;
 	while (i < 4) {
 		t_v4sf a_row = a->rows[i];
 		res.rows[i] = v4sf_n(a_row[0]) * b->rows[0];
@@ -646,9 +646,9 @@ static inline bool mat4_inverse(const t_mat4* src, t_mat4* out) {
 		return false;
 
 	float inv_det = 1.0f / det;
-	int row = 0;
+	int32_t row = 0;
 	while (row < 4) {
-		int col = 0;
+		int32_t col = 0;
 		while (col < 4) {
 			float cofactor = mat4_cofactor(src, row, col);
 			out->m[col][row] = cofactor * inv_det;
@@ -659,15 +659,15 @@ static inline bool mat4_inverse(const t_mat4* src, t_mat4* out) {
 	return true;
 }
 
-static inline t_mat3 mat4_sub(const t_mat4* src, int skip_r, int skip_c) {
+static inline t_mat3 mat4_sub(const t_mat4* src, int32_t skip_r, int32_t skip_c) {
 	t_mat3 res;
-	int row = 0;
-	int r = 0;
+	int32_t row = 0;
+	int32_t r = 0;
 	while (row < 4) {
 		if (row == skip_r && ++row)
 			continue;
-		int c = 0;
-		int col = 0;
+		int32_t c = 0;
+		int32_t col = 0;
 		while (col < 4) {
 			if (col == skip_c && ++col)
 				continue;
@@ -679,7 +679,7 @@ static inline t_mat3 mat4_sub(const t_mat4* src, int skip_r, int skip_c) {
 	return res;
 }
 
-static inline float mat4_cofactor(const t_mat4* src, int row, int col) {
+static inline float mat4_cofactor(const t_mat4* src, int32_t row, int32_t col) {
 	t_mat3 sub = mat4_sub(src, row, col);
 	float det = mat3_det(&sub);
 	if ((row + col) & 1)
@@ -690,7 +690,7 @@ static inline float mat4_cofactor(const t_mat4* src, int row, int col) {
 
 static inline float mat4_det(const t_mat4* src) {
 	float res = 0.0f;
-	int i = 0;
+	int32_t i = 0;
 	while (i < 4) {
 		res += src->m[0][i] * mat4_cofactor(src, 0, i);
 		++i;
@@ -886,11 +886,11 @@ static inline float ft_lerp(float a, float b, float t) {
 	return (1.0f - t) * a + t * b;
 }
 
-static inline int ft_imax(int a, int b) {
+static inline int32_t ft_imax(int32_t a, int32_t b) {
 	return a > b ? a : b;
 }
 
-static inline int ft_imin(int a, int b) {
+static inline int32_t ft_imin(int32_t a, int32_t b) {
 	return a > b ? b : a;
 }
 

@@ -72,14 +72,12 @@ static inline void resize_frame_buffer(t_context* ctx, t_renderer* r) {
 	free(r->normal_buffer);
 
 	size_t size = sizeof(t_vec3) * r->pixels;
-	r->buffer = a_alloc(64, size);
-	r->denoise_buffer = a_alloc(64, size);
-	r->albedo_buffer = a_alloc(64, size);
-	r->normal_buffer = a_alloc(64, size);
-	if (!r->buffer || !r->denoise_buffer || !r->albedo_buffer || !r->normal_buffer || !mlx_resize_image(ctx->img, r->width, r->height)) {
-		pthread_mutex_unlock(&r->mutex);
+	r->buffer = try_aligned_alloc(ctx, 64, size);
+	r->denoise_buffer = try_aligned_alloc(ctx, 64, size);
+	r->albedo_buffer = try_aligned_alloc(ctx, 64, size);
+	r->normal_buffer = try_aligned_alloc(ctx, 64, size);
+	if (!mlx_resize_image(ctx->img, r->width, r->height))
 		fatal_error(ctx, errors(ERR_RESIZE), __FILE__, __LINE__);
-	}
 	memset(r->buffer, 0, size);
 	memset(r->denoise_buffer, 0, size);
 	memset(r->albedo_buffer, 0, size);
@@ -123,10 +121,6 @@ static inline void resize_selection_mask(t_context* ctx, t_renderer* r) {
 	free(ctx->editor.selection_mask);
 
 	size_t size = sizeof(float) * r->pixels;
-	ctx->editor.selection_mask = malloc(size);
-	if (!ctx->editor.selection_mask) {
-		pthread_mutex_unlock(&r->mutex);
-		fatal_error(ctx, errors(ERR_RESIZE), __FILE__, __LINE__);
-	}
+	ctx->editor.selection_mask = try_malloc(ctx, size);
 	memset(ctx->editor.selection_mask, 0, size);
 }

@@ -16,7 +16,7 @@ void fatal_error(t_context* ctx, const char* message, const char* file, int line
 void clean_context(t_context* ctx);
 
 void vector_try_init(t_context* ctx, t_vector* vec, bool is_shrink, void (*del)(void*));
-bool vector_try_add(t_context* ctx, t_vector* vec, void* item);
+void vector_try_add(t_context* ctx, t_vector* vec, void* item);
 int try_open(t_context* ctx, const char* file, int o_flag, int p_flag);
 ssize_t try_write(t_context* ctx, int fd, const char* src);
 ssize_t try_write_endl(t_context* ctx, int fd, const char* src);
@@ -34,7 +34,8 @@ t_vec2 r2_sequence(uint32_t n, t_vec2 offset);
 float r1_sequence(uint32_t n, float offset);
 t_vec2 r4_sequence_d12(uint32_t n, t_vec2 offset);
 
-void* a_alloc(size_t alignment, size_t size);
+void* try_aligned_alloc(t_context* ctx, size_t alignment, size_t size);
+void* try_malloc(t_context* ctx, size_t size);
 
 t_ray new_ray(t_vec3 origin, t_vec3 dir);
 

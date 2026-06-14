@@ -49,28 +49,26 @@ void key_hook(mlx_key_data_t keydata, void* param) {
 
 	pthread_mutex_lock(&r->mutex);
 	bool dirty = false;
-	if (r->mode == SOLID) {
-		while (r->threads_running)
-			pthread_cond_wait(&r->cond, &r->mutex);
 
-		dirty |= config_editor(ctx, keydata);
+	dirty |= config_editor(ctx, keydata);
 
-		if (ctx->editor.mode == EDIT_DEFAULT && keydata.key == MLX_KEY_D && keydata.modifier == MLX_SHIFT && keydata.action == MLX_PRESS)
-			dirty |= dup_object(ctx);
+	if (ctx->editor.mode == EDIT_DEFAULT && keydata.key == MLX_KEY_D && keydata.modifier == MLX_SHIFT && keydata.action == MLX_PRESS)
+		dirty |= dup_object(ctx);
 
-		if (ctx->editor.mode == EDIT_DEFAULT && keydata.key == MLX_KEY_DELETE && keydata.action == MLX_PRESS)
-			dirty |= del_object(ctx);
-	}
+	if (ctx->editor.mode == EDIT_DEFAULT && keydata.key == MLX_KEY_DELETE && keydata.action == MLX_PRESS)
+		dirty |= del_object(ctx);
 
 	if (ctx->editor.mode == EDIT_DEFAULT && keydata.key == MLX_KEY_F && keydata.action == MLX_PRESS)
 		dirty |= frame_camera(ctx, ctx->editor.selected_obj);
 
 	if (ctx->editor.mode == EDIT_DEFAULT && keydata.key == MLX_KEY_T && keydata.action == MLX_PRESS)
 		dirty |= reset_camera(ctx);
+
 	if (ctx->editor.mode == EDIT_DEFAULT && keydata.key == MLX_KEY_Y && keydata.action == MLX_PRESS)
 		set_default_view(ctx);
 
-	dirty |= config_renderer(ctx, keydata);
+	dirty |= set_render_mode(ctx, keydata);
+
 	pthread_mutex_unlock(&r->mutex);
 
 	if (dirty)

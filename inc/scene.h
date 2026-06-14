@@ -8,7 +8,7 @@
 void init_scene(t_context* ctx);
 void clean_scene(t_context* ctx);
 
-bool init_bvh(t_context* ctx);
+void init_bvh(t_context* ctx);
 bool hit_bvh(uint32_t root_idx, const t_ray* ray, t_hit* hit, t_bvh_node* tree);
 bool hit_bvh_editing(uint32_t root_idx, const t_ray* ray, t_hit* hit, t_bvh_node* tree);
 bool hit_bvh_shadow(uint32_t root_idx, const t_ray* ray, float dist, t_bvh_node* tree);

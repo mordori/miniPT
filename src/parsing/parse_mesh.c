@@ -20,6 +20,7 @@ static inline void parse_face(char** ptr, char* end, uint32_t* tri_i, t_triangle
 	uint32_t v_count, uint32_t vn_count, uint32_t vt_count);
 static inline void parse_vertex(char** ptr, int32_t* v, int32_t* uv, int32_t* n);
 static inline uint32_t get_index(int32_t i, uint32_t count);
+static inline int32_t fast_atoi(char** str);
 
 void parse_obj(t_context* ctx, const char* file, t_mesh* mesh) {
 	int fd = open(file, O_RDONLY);
@@ -56,12 +57,12 @@ void parse_obj(t_context* ctx, const char* file, t_mesh* mesh) {
 			return;
 		}
 
-		verts = malloc(sizeof(t_vec3) * v);
+		verts = try_malloc(ctx, sizeof(t_vec3) * v);
+		mesh->triangle_count = tris;
+		mesh->triangles = try_malloc(ctx, sizeof(t_triangle) * tris);
 		normals = malloc(sizeof(t_vec3) * vn);
 		uvs = malloc(sizeof(t_vec2) * vt);
-		mesh->triangle_count = tris;
-		mesh->triangles = malloc(sizeof(t_triangle) * tris);
-		if (!mesh->triangles || !verts || (vn > 0 && !normals) || (vt > 0 && !uvs))
+		if ((vn > 0 && !normals) || (vt > 0 && !uvs))
 			fatal_error(ctx, errors(ERR_MALLOC), __FILE__, __LINE__);
 	}
 	{
@@ -106,7 +107,7 @@ static inline void count_elements(char* ptr, char* end, uint32_t* v, uint32_t* v
 				default: break;
 			}
 		} else if (*ptr == 'f' && *(ptr + 1) == ' ') {
-			int verts = 0;
+			int32_t verts = 0;
 			char* f_ptr = ptr + 2;
 			while (*f_ptr != '\n' && *f_ptr != '\r' && f_ptr < end) {
 				if (*f_ptr != ' ' && *f_ptr != '\t') {
@@ -175,18 +176,18 @@ static inline void parse_face(char** ptr, char* end, uint32_t* tri_i, t_triangle
 }
 
 static inline void parse_vertex(char** ptr, int32_t* v, int32_t* uv, int32_t* n) {
-	*v = ft_atoi(ptr);
+	*v = fast_atoi(ptr);
 	*uv = 0;
 	*n = 0;
 	if (**ptr == '/') {
 		++(*ptr);
 		if (**ptr != '/')
-			*uv = ft_atoi(ptr);
+			*uv = fast_atoi(ptr);
 	}
 	if (**ptr == '/') {
 		++(*ptr);
 		if (**ptr != '/')
-			*n = ft_atoi(ptr);
+			*n = fast_atoi(ptr);
 	}
 	while (**ptr == ' ' || **ptr == '\t')
 		++(*ptr);
@@ -196,4 +197,24 @@ static inline uint32_t get_index(int32_t i, uint32_t count) {
 	if (i < 0)
 		return (uint32_t)(count + i);
 	return (uint32_t)(i - 1);
+}
+
+static inline int32_t fast_atoi(char** str) {
+	while (ft_isspace(**str))
+		(*str)++;
+
+	int32_t sign = 1;
+	if (**str == '-') {
+		sign = -1;
+		(*str)++;
+	} else if (**str == '+') {
+		(*str)++;
+	}
+
+	int32_t number = 0;
+	while (ft_isdigit(**str)) {
+		number = number * 10 + (**str - '0');
+		(*str)++;
+	}
+	return sign * number;
 }

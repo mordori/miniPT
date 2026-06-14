@@ -73,12 +73,13 @@ enum e_err_code {
 	ERR_TEXNPOT,
 	ERR_DIR,
 	ERR_MALLOC,
+	ERR_DIROPEN,
+	ERR_MESH,
 };
 
 enum e_obj_type {
 	OBJ_MESH,
 	OBJ_SPHERE,
-	OBJ_QUAD,
 };
 
 enum e_cam_state {
@@ -157,7 +158,6 @@ typedef struct s_aabb t_aabb;
 typedef struct s_object t_object;
 typedef struct s_hit t_hit;
 typedef struct s_sphere t_sphere;
-typedef struct s_quad t_quad;
 typedef struct s_triangle t_triangle;
 typedef struct s_mesh t_mesh;
 typedef struct s_light t_light;
@@ -262,18 +262,6 @@ struct __attribute__((aligned(16))) s_sphere {
 	float radius_sq;
 };
 
-struct __attribute__((aligned(16))) s_quad {
-	t_vec3 vec_alpha;
-	t_vec3 vec_beta;
-	t_vec3 q;
-	t_vec3 u;
-	t_vec3 v;
-	t_vec3 normal;
-	t_vec3 w;
-	float d;
-	float area;
-};
-
 struct __attribute__((aligned(16))) s_triangle {
 	t_vec3 v0, v1, v2;
 	t_vec3 n0, n1, n2;
@@ -293,7 +281,6 @@ struct __attribute__((aligned(16))) s_mesh {
 union __attribute__((aligned(16))) u_shape {
 	t_mesh mesh;
 	t_sphere sphere;
-	t_quad quad;
 };
 struct __attribute__((aligned(16))) s_object {
 	t_obj_type type;
@@ -387,7 +374,7 @@ struct s_tex_entry {
 
 struct s_assets {
 	t_vector materials;
-	int tex_count;
+	int32_t tex_count;
 	t_tex_entry textures[MAX_TEXTURES];
 };
 
@@ -508,7 +495,7 @@ struct __attribute__((aligned(16))) s_bvh_node {
 	uint32_t left_idx;
 	uint32_t right_idx;
 	uint32_t tri_count;
-	int axis;
+	int32_t axis;
 };
 
 struct s_mouse {

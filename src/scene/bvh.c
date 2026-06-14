@@ -14,7 +14,7 @@ static inline void branch_idx(const t_ray* ray, const t_bvh_node* node, uint32_t
 static inline uint32_t build_mesh_bvh(t_mesh* mesh, uint32_t start, uint32_t end, uint32_t* nodes);
 static inline void sort_bvh_mesh_triangles(t_bvh_node* node, t_triangle* tris, size_t start, size_t n);
 
-bool init_bvh(t_context* ctx) {
+void init_bvh(t_context* ctx) {
 	t_scene* scene = &ctx->scene;
 	free(scene->geo.bvh_nodes);
 	scene->geo.bvh_nodes = NULL;
@@ -22,17 +22,13 @@ bool init_bvh(t_context* ctx) {
 	size_t n = scene->geo.objs.total;
 	if (n == 0) {
 		scene->geo.bvh_root_idx = 0;
-		return true;
+		return;
 	}
 
-	scene->geo.bvh_nodes = malloc(sizeof(t_bvh_node) * ((2 * n) - 1));
-	if (!scene->geo.bvh_nodes)
-		return false;
-
+	scene->geo.bvh_nodes = try_malloc(ctx, sizeof(t_bvh_node) * ((2 * n) - 1));
 	t_object** objs = (t_object**)scene->geo.objs.items;
 	uint32_t nodes = 1;
 	scene->geo.bvh_root_idx = build_bvh(ctx, (const t_object**)objs, n, &nodes);
-	return true;
 }
 
 static inline uint32_t build_bvh(t_context* ctx, const t_object** objs, size_t n, uint32_t* nodes) {
@@ -153,9 +149,7 @@ static inline void branch_idx(const t_ray* ray, const t_bvh_node* node, uint32_t
 }
 
 void init_mesh_bvh(t_context* ctx, t_mesh* mesh) {
-	mesh->bvh_nodes = malloc(sizeof(t_bvh_node) * (mesh->triangle_count * 2 - 1));
-	if (!mesh->bvh_nodes)
-		fatal_error(ctx, errors(ERR_MALLOC), __FILE__, __LINE__);
+	mesh->bvh_nodes = try_malloc(ctx, sizeof(t_bvh_node) * (mesh->triangle_count * 2 - 1));
 	mesh->nodes = 1;
 	mesh->bvh_root_idx = build_mesh_bvh(mesh, 0, mesh->triangle_count, &mesh->nodes);
 }

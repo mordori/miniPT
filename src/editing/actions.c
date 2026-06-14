@@ -57,9 +57,12 @@ void apply_edit_action(t_context* ctx) {
 }
 
 void cancel_edit_action(t_context* ctx) {
-	ctx->editor.selected_obj->transform = ctx->editor.orig_transform;
-	update_transform(&ctx->editor.selected_obj->transform);
-	update_bounds(ctx->editor.selected_obj);
+	t_object* obj = ctx->editor.selected_obj;
+	if (!obj)
+		return;
+	obj->transform = ctx->editor.orig_transform;
+	update_transform(&obj->transform);
+	update_bounds(obj);
 	update_light_radius(ctx);
 	end_edit_action(ctx);
 }

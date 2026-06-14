@@ -1,10 +1,10 @@
+#include "defines.h"
 #include "materials.h"
 #include "rendering.h"
+#include "utils.h"
 
-t_error new_material(t_context* ctx, t_material* mat) {
-	t_material* new_mat = malloc(sizeof(*new_mat));
-	if (!new_mat)
-		return E_MALLOC;
+void new_material(t_context* ctx, t_material* mat) {
+	t_material* new_mat = try_malloc(ctx, sizeof(*new_mat));
 
 	// TODO: remove
 	mat->albedo.a = 1.0f;
@@ -14,11 +14,7 @@ t_error new_material(t_context* ctx, t_material* mat) {
 	mat->f0_dielectric = vec3_n(reflectance(mat->ior));
 	*new_mat = *mat;
 
-	if (!vector_add(&ctx->scene.assets.materials, new_mat)) {
-		free(new_mat);
-		return E_MALLOC;
-	}
-	return E_OK;
+	vector_try_add(ctx, &ctx->scene.assets.materials, new_mat);
 }
 
 static t_vec3 apply_normal_map(const t_material* mat, t_vec3 n, t_path* path) {

@@ -16,18 +16,6 @@ void add_sphere(t_context* ctx, uint32_t mat_id, bool is_selected) {
 	add_object(ctx, &obj, is_selected);
 }
 
-t_error init_sphere(t_context* ctx, t_vec3 center, float diameter, uint32_t mat_id) {
-	t_object obj = (t_object){ 0 };
-	obj.type = OBJ_SPHERE;
-	obj.material_id = mat_id;
-	obj.transform.pos = center;
-	float radius = diameter * 0.5f;
-	obj.shape.sphere.radius = radius;
-	obj.shape.sphere.radius_sq = radius * radius;
-	obj.transform.rot.w = 1.0f;
-	return add_object(ctx, &obj, false);
-}
-
 bool hit_sphere(const t_shape* shape, const t_ray* ray, t_hit* hit) {
 	const t_sphere* sphere = &shape->sphere;
 	if (sphere->radius < M_EPSILON)

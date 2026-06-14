@@ -27,7 +27,7 @@ bool sample_bsdf(t_path* path);
 float power_heuristic(float pdf_d, float pdf_r);
 float bsdf_pdf(t_path* path);
 float light_pdf(t_vec3 l, float radius_sq);
-bool config_renderer(t_context* ctx, mlx_key_data_t keydata);
+bool set_render_mode(t_context* ctx, mlx_key_data_t keydata);
 void cancel_render(t_renderer* r);
 void set_mode_preview(t_context* ctx, t_renderer* r, bool* update);
 void set_mode_rendered(t_renderer* r);

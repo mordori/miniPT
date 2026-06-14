@@ -4,7 +4,6 @@
 #include "editing.h"
 #include "lib_math.h"
 #include "rendering.h"
-#include "scene.h"
 #include "utils.h"
 
 static inline void* render_routine(void* arg);
@@ -12,23 +11,20 @@ static inline void render_tile(const t_context* ctx, t_vec3* buf, uint32_t tile_
 static inline void render_pixel(const t_context* ctx, t_pixel* pixel);
 static inline void sample_pixel(const t_context* ctx, t_pixel* pixel);
 static inline bool get_thread_status(t_renderer* r, uint32_t* tile_id);
-static inline bool set_render_mode(t_context* ctx, mlx_key_data_t keydata);
-// static inline void set_samples(t_context* ctx, mlx_key_data_t keydata);
-// static inline bool set_bounces(t_context* ctx, mlx_key_data_t keydata);
 
 bool init_renderer(t_context* ctx) {
 	t_renderer* r = &ctx->renderer;
 
 	r->init_mutex = !pthread_mutex_init(&r->mutex, NULL);
 	r->init_cond = !pthread_cond_init(&r->cond, NULL);
+	if (!r->init_mutex || !r->init_cond)
+		fatal_error(ctx, errors(ERR_RENINIT), __FILE__, __LINE__);
 
 	r->threads_amount = (int32_t)sysconf(_SC_NPROCESSORS_ONLN);
 	if (r->threads_amount == ERROR)
 		r->threads_amount = THREADS_DFL;
 	r->threads_amount *= 2;
-	r->threads = malloc(sizeof(*r->threads) * r->threads_amount);
-	if (!r->init_mutex || !r->init_cond || !r->threads)
-		fatal_error(ctx, errors(ERR_RENINIT), __FILE__, __LINE__);
+	r->threads = try_malloc(ctx, sizeof(*r->threads) * r->threads_amount);
 
 	r->oidn_device = oidnNewDevice(OIDN_DEVICE_TYPE_DEFAULT);
 	oidnCommitDevice(r->oidn_device);
@@ -205,35 +201,24 @@ void set_mode_rendered(t_renderer* r) {
 	pthread_cond_broadcast(&r->cond);
 }
 
-bool config_renderer(t_context* ctx, mlx_key_data_t keydata) {
-	bool dirty = false;
-	dirty |= set_render_mode(ctx, keydata);
-	return dirty;
-}
-
-static inline bool set_render_mode(t_context* ctx, mlx_key_data_t keydata) {
-	t_renderer* r = &ctx->renderer;
-
+bool set_render_mode(t_context* ctx, mlx_key_data_t keydata) {
 	if (keydata.key == MLX_KEY_TAB && keydata.action == MLX_PRESS) {
+		t_renderer* r = &ctx->renderer;
+		atomic_store(&r->render_cancel, true);
 		while (r->threads_running)
 			pthread_cond_wait(&r->cond, &r->mutex);
 
 		if (r->mode != SOLID) {
 			r->mode = SOLID;
 			if (ctx->editor.selected_obj) {
-				vector_remove(&ctx->scene.geo.objs, ctx->editor.selected_obj);
-				if (!init_bvh(ctx)) {
-					pthread_mutex_unlock(&ctx->renderer.mutex);
-					fatal_error(ctx, errors(ERR_BVH), __FILE__, __LINE__);
-				}
 				ctx->editor.selection_time = engine_time();
 				ctx->editor.request_obj_tab = true;
 			}
 		} else {
-			if (ctx->editor.selected_obj)
-				reset_editor(ctx);
-			else if (ctx->editor.mode != EDIT_DEFAULT)
-				end_edit_action(ctx);
+			// if (ctx->editor.selected_obj)
+			reset_editor(ctx);
+			// else if (ctx->editor.mode != EDIT_DEFAULT)
+			// 	end_edit_action(ctx);
 			ctx->editor.mode = EDIT_DEFAULT;
 			r->mode = RENDERED;
 			ctx->editor.request_scene_tab = true;

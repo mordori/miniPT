@@ -14,6 +14,10 @@ bool config_editor(t_context* ctx, mlx_key_data_t keydata) {
 	if (!ctx->editor.selected_obj || keydata.action != MLX_PRESS)
 		return false;
 
+	t_renderer* r = &ctx->renderer;
+	while (r->threads_running)
+		pthread_cond_wait(&r->cond, &r->mutex);
+
 	switch_edit_mode(ctx, keydata);
 	if (ctx->editor.mode != EDIT_DEFAULT)
 		set_axis_constraints(ctx, keydata);
@@ -101,13 +105,9 @@ void reset_editor(t_context* ctx) {
 		cancel_edit_action(ctx);
 
 	t_renderer* r = &ctx->renderer;
-	t_object* obj = ctx->editor.selected_obj;
+	// t_object* obj = ctx->editor.selected_obj;
 
-	vector_try_add(ctx, &ctx->scene.geo.objs, obj);
-	if (!init_bvh(ctx)) {
-		pthread_mutex_unlock(&r->mutex);
-		fatal_error(ctx, errors(ERR_BVH), __FILE__, __LINE__);
-	}
-
+	// vector_try_add(ctx, &ctx->scene.geo.objs, obj);
+	// init_bvh(ctx);
 	memset(ctx->editor.selection_mask, 0, sizeof(float) * r->pixels);
 }

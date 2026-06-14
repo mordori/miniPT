@@ -27,13 +27,7 @@ static inline void save_render(t_context* ctx, char* out_filepath, size_t max_le
 	try_write(ctx, fd, buf);
 
 	uint32_t n = ctx->renderer.pixels;
-	uint8_t* buf_rgb = malloc(n * 3);
-	if (!buf_rgb) {
-		close(fd);
-		pthread_mutex_unlock(&ctx->renderer.mutex);
-		fatal_error(ctx, errors(ERR_MALLOC), __FILE__, __LINE__);
-	}
-
+	uint8_t* buf_rgb = try_malloc(ctx, n * 3);
 	uint8_t* pixels = ctx->img->pixels;
 	uint32_t i = 0;
 	while (i < n) {

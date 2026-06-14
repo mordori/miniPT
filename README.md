@@ -56,7 +56,7 @@ By analysing assembly output with GDB and compiler behaviour, several optimisati
 Our approach optimises memory alignment for SIMD (Single Instruction, Multiple Data) execution while delegating most of the instruction selection to the compiler, maintaining a clean codebase.
 
 ### Math Utilities
-- Custom high-performance [linear algebra library](https://github.com/mordori/Lib_math) providing SIMD-accelerated, memory-aligned vector and matrix primitives.
+- Custom [linear algebra library](https://github.com/mordori/Lib_math) providing SIMD-accelerated, memory-aligned vector and matrix primitives.
 
 ### Multi-threading
 - Documentation under construction
@@ -122,8 +122,9 @@ Saved renders are stored in `📁renders/`.
 > [!TIP]
 >
 > Adjust the camera's focus distance to desired surfaces easily in Edit Mode when using a larger aperture to produce a shallow depth of field.
->
-> **Previously accumulated frames are not wasted!**
+
+> [!TIP]
+> Previously accumulated frames are not wasted!
 >
 > Set the amount of samples lower and find the desired angle for the shot first. Then increment the amount for better image quality.
 >

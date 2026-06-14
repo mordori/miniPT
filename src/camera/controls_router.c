@@ -31,6 +31,11 @@ void set_default_view(t_context* ctx) {
 }
 
 bool reset_camera(t_context* ctx) {
+	t_renderer* r = &ctx->renderer;
+	atomic_store(&r->render_cancel, true);
+	while (r->threads_running)
+		pthread_cond_wait(&r->cond, &r->mutex);
+
 	t_camera* cam = &ctx->scene.cam;
 	cam->transform.pos = cam->init_pos;
 	cam->transform.rot = cam->init_rot;
@@ -53,6 +58,10 @@ bool frame_camera(t_context* ctx, t_object* obj) {
 	if (!obj)
 		return false;
 
+	t_renderer* r = &ctx->renderer;
+	atomic_store(&r->render_cancel, true);
+	while (r->threads_running)
+		pthread_cond_wait(&r->cond, &r->mutex);
 	t_camera* cam = &ctx->scene.cam;
 	t_vec3 half_bounds = vec3_scale(obj->bounds, 0.5f);
 	t_vec3 proj;
