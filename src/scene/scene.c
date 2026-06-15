@@ -62,7 +62,8 @@ void init_scene(t_context* ctx) {
 		.albedo = vec3(0.75f, 0.1f, 0.1f),
 		.roughness = 0.1f,
 		.ior = 1.5f,
-		.normal_strength = 1.0f
+		.normal_strength = 1.0f,
+		.is_double_sided = true
 	};
 	new_material(ctx, &mat2);
 
@@ -72,6 +73,7 @@ void init_scene(t_context* ctx) {
 	};
 	pos = vec3(705000.0f, 485000.0f, 520000.0f);
 	init_point_light(ctx, &light, 1, pos);
+	ctx->scene.cam.directional_light.obj->flags |= FLAG_OBJ_HIDDEN_CAM;
 
 	ctx->scene.env.ambient = vec3(0.22f, 0.29f, 0.4f);
 	ctx->scene.env.gradient_2 = g_one;

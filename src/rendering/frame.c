@@ -57,7 +57,7 @@ static inline void set_renderer_state(t_context* ctx, t_renderer* r, bool* updat
 		*update = false;
 		if (r->mode == RENDERED && r->frame > 1) {
 			r->frame = 1;
-			r->render_time = time_now();
+			r->start_time = time_now();
 			r->blit_time = 0;
 		}
 		set_mode_rendered(r);
@@ -102,6 +102,10 @@ static inline void process_frame(t_context* ctx, t_renderer* r) {
 			denoise(r);
 		blit(ctx, r, is_final);
 		r->blit_time = time_now();
+		if (is_final) {
+			r->render_complete = true;
+			r->end_time = time_now();
+		}
 	}
 	r->frame_complete = false;
 	++r->frame;

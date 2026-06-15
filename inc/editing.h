@@ -3,7 +3,7 @@
 
 #include "defines.h"
 
-void select_object(t_context* ctx);
+bool select_object(t_context* ctx);
 bool edit_object(t_context* ctx, t_vec2i delta);
 bool config_editor(t_context* ctx, mlx_key_data_t keydata);
 void apply_edit_action(t_context* ctx);

@@ -31,9 +31,9 @@
 #define SENS_ROTATE 0.003f
 #define SENS_SCALE 0.0019f
 #define SENS_LOOK 0.0023f
-#define SENS_ORBIT 0.003f
+#define SENS_ORBIT 0.004f
 #define SENS_ZOOM 0.0035f
-#define SENS_PAN 0.0005f
+#define SENS_PAN 0.0006f
 
 #define SENSOR_HEIGHT_MM 24.0f
 #define SENSOR_HALF_HEIGHT_MM 12.0f
@@ -42,11 +42,10 @@
 #define CLAMP_INDIRECT 10.0f
 #define WORLD_LIMIT 9999.9f
 
-#define OBJ_HIDDEN_SCENE 1
-#define OBJ_HIDDEN_CAM 2
-#define OBJ_NO_CAST_SHADOW 4
-#define MAT_NO_REC_SHADOW 8
-#define MAT_DOUBLE_SIDED 16
+#define FLAG_OBJ_NONE 0
+#define FLAG_OBJ_HIDDEN_SCENE 1
+#define FLAG_OBJ_HIDDEN_CAM 2
+#define FLAG_OBJ_NO_CAST_SHADOW 4
 
 #define UINT_PRIME 15485863u
 #define FP_PRIME 1619u
@@ -127,6 +126,7 @@ enum e_axis {
 	AXIS_XY,
 	AXIS_XZ,
 	AXIS_YZ,
+	AXIS_VIEW,
 };
 
 enum e_bg_mode {
@@ -177,7 +177,6 @@ typedef struct s_geo t_geo;
 typedef struct s_env t_env;
 typedef struct s_assets t_assets;
 typedef struct s_mouse t_mouse;
-typedef struct s_bvh_element t_bvh_element;
 
 typedef union u_shape t_shape;
 typedef union u_ui t_ui;
@@ -215,20 +214,14 @@ struct __attribute__((aligned(16))) s_hit {
 	bool is_primary;
 	bool front_face;
 	t_object* obj;
+
 	t_vec3 point;
 	t_vec3 normal;
 	t_vec3 tangent;
 	t_vec3 bitangent;
 	t_vec3 geo_normal;
-	t_vec2 uv;
-};
 
-struct s_bvh_element {
-	uint32_t stack[64];
-	t_bvh_node* node;
-	t_hit temp;
-	bool res;
-	int32_t i;
+	t_vec2 uv;
 };
 
 struct __attribute__((aligned(16))) s_texture {
@@ -255,6 +248,8 @@ struct __attribute__((aligned(16))) s_material {
 	bool is_texture;
 	bool is_normal_map;
 	bool is_emissive;
+	bool is_double_sided;
+	bool is_shadowed;
 };
 
 struct __attribute__((aligned(16))) s_sphere {
@@ -282,16 +277,24 @@ union __attribute__((aligned(16))) u_shape {
 	t_mesh mesh;
 	t_sphere sphere;
 };
+
+struct __attribute__((aligned(16))) s_aabb {
+	t_vec3 min;
+	t_vec3 max;
+};
+
 struct __attribute__((aligned(16))) s_object {
 	t_obj_type type;
 	uint32_t flags;
 	uint32_t material_id;
 	uint32_t id;
 	t_material* mat;
+	t_light* light;
 	t_shape shape;
 	t_transform transform;
 	t_vec3 bounds_center;
 	t_vec3 bounds;
+	t_aabb aabb;
 };
 
 struct __attribute__((aligned(16))) s_light {
@@ -329,6 +332,7 @@ struct __attribute__((aligned(16))) s_camera {
 	t_vec2 skydome_uv_offset;
 	float init_focal_len_mm;
 	float init_focus_dist;
+	float init_exposure;
 	float aspect;
 	float focal_len_mm;
 	float f_stop;
@@ -345,6 +349,10 @@ struct __attribute__((aligned(16))) s_camera {
 struct __attribute__((aligned(16))) s_path {
 	t_ray ray;
 	t_hit hit;
+
+	t_material* mat;
+	t_vec2 uv;
+
 	t_vec3 color;
 	t_vec3 throughput;
 	t_vec3 f0;
@@ -352,8 +360,7 @@ struct __attribute__((aligned(16))) s_path {
 	t_vec3 l;
 	t_vec3 v;
 	t_vec3 h;
-	t_vec2 uv;
-	t_material* mat;
+
 	uint32_t bounce;
 	float ndotl;
 	float ndotv;
@@ -363,6 +370,7 @@ struct __attribute__((aligned(16))) s_path {
 	float alpha;
 	float pdf;
 	float p_spec;
+
 	bool sample_spec;
 };
 
@@ -416,6 +424,7 @@ struct __attribute__((aligned(64))) s_renderer {
 		bool active;
 		bool resize_pending;
 		bool frame_complete;
+		bool render_complete;
 	};
 	struct __attribute__((aligned(64))) {
 		t_vec3* buffer;
@@ -440,7 +449,8 @@ struct __attribute__((aligned(64))) s_renderer {
 		uint32_t new_height;
 		int32_t threads_amount;
 		int32_t threads_init;
-		uint32_t render_time;
+		uint32_t start_time;
+		uint32_t end_time;
 		uint32_t blit_time;
 		bool init_mutex;
 		bool init_cond;
@@ -479,11 +489,6 @@ struct __attribute__((aligned(16))) s_pixel {
 	float u;
 	float v;
 	float scale;
-};
-
-struct __attribute__((aligned(16))) s_aabb {
-	t_vec3 min;
-	t_vec3 max;
 };
 
 struct __attribute__((aligned(16))) s_bvh_node {

@@ -9,6 +9,8 @@ void new_material(t_context* ctx, t_material* mat) {
 	// TODO: remove
 	mat->albedo.a = 1.0f;
 
+	mat->is_shadowed = !mat->is_emissive;
+
 	mat->ior = fmaxf(mat->ior, 1.0f);
 	mat->roughness = fmaxf(mat->roughness, 0.045f);
 	mat->f0_dielectric = vec3_n(reflectance(mat->ior));

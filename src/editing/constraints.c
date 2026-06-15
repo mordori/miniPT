@@ -1,14 +1,16 @@
 #include "editing.h"
+#include "lib_math.h"
 
 static inline void x_constraint(t_context* ctx);
 static inline void y_constraint(t_context* ctx);
 static inline void z_constraint(t_context* ctx);
+static inline void view_constraint(t_context* ctx);
 static inline t_vec3 get_contraint_axis(t_context* ctx, t_vec3 global_axis, uint32_t col);
 static inline t_vec3 get_plane(t_context* ctx, t_vec3 axis, t_vec3 n);
 static inline void planar_basis(t_context* ctx, t_vec3 n);
 
 void set_axis_constraints(t_context* ctx, mlx_key_data_t keydata) {
-	if (keydata.key != MLX_KEY_X && keydata.key != MLX_KEY_Y && keydata.key != MLX_KEY_Z)
+	if (keydata.key != MLX_KEY_X && keydata.key != MLX_KEY_Y && keydata.key != MLX_KEY_Z && keydata.key != MLX_KEY_V)
 		return;
 
 	ctx->editor.constraint_axis = AXIS_DEFAULT;
@@ -19,6 +21,7 @@ void set_axis_constraints(t_context* ctx, mlx_key_data_t keydata) {
 		case MLX_KEY_X: x_constraint(ctx); break;
 		case MLX_KEY_Y: y_constraint(ctx); break;
 		case MLX_KEY_Z: z_constraint(ctx); break;
+		case MLX_KEY_V: view_constraint(ctx); break;
 		default: break;
 	}
 }
@@ -67,6 +70,12 @@ static inline void z_constraint(t_context* ctx) {
 		planar_basis(ctx, g_forward);
 		ctx->editor.constraints = 2;
 	}
+}
+
+static inline void view_constraint(t_context* ctx) {
+	ctx->editor.constraint_axis = AXIS_VIEW;
+	ctx->editor.constraints = 1;
+	ctx->editor.axis_primary = ctx->scene.cam.forward;
 }
 
 static inline void planar_basis(t_context* ctx, t_vec3 n) {

@@ -23,7 +23,6 @@ void init_point_light(t_context* ctx, t_light* light, uint32_t mat_id, t_vec3 po
 	obj.shape.sphere.radius_sq = l->radius_sq;
 	obj.material_id = mat_id;
 	obj.transform.pos = pos;
-	obj.flags |= OBJ_NO_CAST_SHADOW | MAT_NO_REC_SHADOW | OBJ_HIDDEN_CAM;
 
 	if (vec3_length(obj.transform.pos) > 500.0f) {
 		init_dir_light(ctx, l, &obj);

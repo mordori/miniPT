@@ -4,41 +4,19 @@
 #include "scene.h"
 
 static inline t_aabb combine_aabb(const t_aabb* a, const t_aabb* b);
-static inline t_aabb aabb_object_to_world(t_aabb aabb, const t_mat4* object_to_world);
-
-static inline t_aabb sphere_bounds(const t_object* obj);
-
 static inline t_aabb triangle_bounds(const t_triangle* tri);
 
 t_aabb get_volume_bounds(t_object** objs, size_t n) {
-	t_aabb res = get_object_bounds(objs[0]);
-	objs[0]->bounds_center = vec3_div(vec3_add(res.min, res.max), 2.0f);
-	objs[0]->bounds = vec3_sub(res.max, res.min);
+	t_aabb res = objs[0]->aabb;
 	size_t i = 1;
 	while (i < n) {
-		t_aabb aabb = get_object_bounds(objs[i]);
-		objs[i]->bounds_center = vec3_div(vec3_add(aabb.min, aabb.max), 2.0f);
-		objs[i]->bounds = vec3_sub(aabb.max, aabb.min);
-		res = combine_aabb(&res, &aabb);
+		res = combine_aabb(&res, &objs[i]->aabb);
 		++i;
 	}
 	return res;
 }
 
-t_aabb get_object_bounds(const t_object* obj) {
-	t_aabb res = { 0 };
-	switch (obj->type) {
-		case OBJ_SPHERE: res = sphere_bounds(obj); break;
-		case OBJ_MESH: {
-			t_bvh_node root = obj->shape.mesh.bvh_nodes[obj->shape.mesh.bvh_root_idx - 1];
-			res = aabb_object_to_world(root.aabb, &obj->transform.object_to_world);
-			break;
-		}
-	}
-	return res;
-}
-
-static inline t_aabb aabb_object_to_world(t_aabb aabb, const t_mat4* object_to_world) {
+t_aabb aabb_object_to_world(t_aabb aabb, const t_mat4* object_to_world) {
 	t_vec3 corners[8];
 	corners[0] = vec3(aabb.min.x, aabb.min.y, aabb.min.z);
 	corners[1] = vec3(aabb.max.x, aabb.min.y, aabb.min.z);
@@ -110,9 +88,16 @@ int cmp_bounds_z(const void* a, const void* b) {
 }
 
 void update_bounds(t_object* obj) {
-	t_aabb aabb = get_object_bounds(obj);
-	obj->bounds_center = vec3_div(vec3_add(aabb.min, aabb.max), 2.0f);
-	obj->bounds = vec3_sub(aabb.max, aabb.min);
+	switch (obj->type) {
+		case OBJ_SPHERE: obj->aabb = sphere_bounds(obj); break;
+		case OBJ_MESH: {
+			t_bvh_node root = obj->shape.mesh.bvh_nodes[obj->shape.mesh.bvh_root_idx - 1];
+			obj->aabb = aabb_object_to_world(root.aabb, &obj->transform.object_to_world);
+			break;
+		}
+	}
+	obj->bounds_center = vec3_div(vec3_add(obj->aabb.min, obj->aabb.max), 2.0f);
+	obj->bounds = vec3_sub(obj->aabb.max, obj->aabb.min);
 }
 
 float get_max_bounds_dim(const t_object* obj) {

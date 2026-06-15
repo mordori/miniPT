@@ -61,12 +61,6 @@ void key_hook(mlx_key_data_t keydata, void* param) {
 	if (ctx->editor.mode == EDIT_DEFAULT && keydata.key == MLX_KEY_F && keydata.action == MLX_PRESS)
 		dirty |= frame_camera(ctx, ctx->editor.selected_obj);
 
-	if (ctx->editor.mode == EDIT_DEFAULT && keydata.key == MLX_KEY_T && keydata.action == MLX_PRESS)
-		dirty |= reset_camera(ctx);
-
-	if (ctx->editor.mode == EDIT_DEFAULT && keydata.key == MLX_KEY_Y && keydata.action == MLX_PRESS)
-		set_default_view(ctx);
-
 	dirty |= set_render_mode(ctx, keydata);
 
 	pthread_mutex_unlock(&r->mutex);
@@ -93,11 +87,9 @@ void mouse_hook(mouse_key_t button, action_t action, modifier_key_t mods, void* 
 	if (button == MLX_MOUSE_BUTTON_LEFT && action == MLX_PRESS && r->cam.state == CAM_DEFAULT &&
 		!mlx_is_key_down(ctx->mlx, MLX_KEY_LEFT_ALT)) {
 		if (ctx->editor.mode == EDIT_DEFAULT)
-			select_object(ctx);
+			dirty |= select_object(ctx);
 		else
 			apply_edit_action(ctx);
-		if (r->mode == SOLID)
-			dirty = true;
 	} else if (button == MLX_MOUSE_BUTTON_RIGHT && action == MLX_PRESS && ctx->editor.mode != EDIT_DEFAULT &&
 		!mlx_is_key_down(ctx->mlx, MLX_KEY_LEFT_ALT)) {
 		cancel_edit_action(ctx);

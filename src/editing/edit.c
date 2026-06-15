@@ -33,7 +33,7 @@ bool config_editor(t_context* ctx, mlx_key_data_t keydata) {
 static inline void switch_edit_mode(t_context* ctx, mlx_key_data_t keydata) {
 	t_edit_mode mode = EDIT_DEFAULT;
 	switch (keydata.key) {
-		case MLX_KEY_G: mode = EDIT_TRANSLATE; break;
+		case MLX_KEY_T: mode = EDIT_TRANSLATE; break;
 		case MLX_KEY_R: mode = EDIT_ROTATE; break;
 		case MLX_KEY_S: mode = EDIT_SCALE; break;
 		default: break;
@@ -105,9 +105,5 @@ void reset_editor(t_context* ctx) {
 		cancel_edit_action(ctx);
 
 	t_renderer* r = &ctx->renderer;
-	// t_object* obj = ctx->editor.selected_obj;
-
-	// vector_try_add(ctx, &ctx->scene.geo.objs, obj);
-	// init_bvh(ctx);
 	memset(ctx->editor.selection_mask, 0, sizeof(float) * r->pixels);
 }

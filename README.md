@@ -20,13 +20,14 @@
 - Modern PBR pipeline with microfacet BSDF
 - Bilinear texture filtering and normal mapping
 - Physical camera with turntable controller
-- Object Edit Mode with simplified lighting inspired by Blender
+- Object Edit Mode inspired by Blender
 - Integrates Intel Open Image Denoise for cleaning up the remaining noise from the completed render
 - Loads meshes in .obj format and the objects are instantiated
 - Utilizes Dear ImGui for scene controls and various object/material parameters
 
 #### TODO
-- UI improvements
+- .mtl support for .obj meshes
+- UI and UX improvements
 - Anisotropic & clear coat BRDF
 - BTDF for BSDF
 - Improve the naive median-split BVH
@@ -65,7 +66,7 @@ Our approach optimises memory alignment for SIMD (Single Instruction, Multiple D
 - Documentation under construction
 
 ### Light-weight Edit Mode
-- Simplified ray and lighting calculations with artificial ambient lighting for smooth scene composition.
+- Simplified ray and lighting calculations with artificial ambient lighting for smoother scene composition experience.
 
 ### Pixel Processing
 #### Vectorised Preview Mode
@@ -131,28 +132,27 @@ Saved renders are stored in `📁renders/`.
 > Setting the samples amount to be less than the current frame pauses the rendering. To continue, raise the samples to the previous amount.
 
 ## Controls
-### Render Mode
-| Key⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                     | Navigation          ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀  |
+### Navigation
+| Key⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                     | Action               ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀  |
 |----------------------------------------------------------------|-----------------------------------------------|
-| <kbd>LMB</kbd>                                                 | Select                                        |
+| <kbd>RMB</kbd>                                                 | Look                                          |
 | <kbd>ALT</kbd> + <kbd>LMB</kbd>                                | Orbit                                         |
 | <kbd>ALT</kbd> + <kbd>LMB</kbd>                                | Zoom                                          |
 | <kbd>ALT</kbd> + <kbd>LMB</kbd>                                | Pan                                           |
 | <kbd>F</kbd>                                                   | Frame                                         |
-| <kbd>Y</kbd>                                                   | Save View                                     |
-| <kbd>T</kbd>                                                   | Apply Saved View                              |
 
-### Edit Mode
+### Editing
 | Key⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀                                     | Action               ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀  |
 |----------------------------------------------------------------|-----------------------------------------------|
 | <kbd>TAB</kbd>                                                 | Toggle Edit Mode                              |
 | <kbd>LMB</kbd>                                                 | Select / Apply Edit                           |
 | <kbd>RMB</kbd>                                                 | Cancel Edit                                   |
-| <kbd>G</kbd>                                                   | Translate                                     |
+| <kbd>T</kbd>                                                   | Translate                                     |
 | <kbd>R</kbd>                                                   | Rotate                                        |
 | <kbd>S</kbd>                                                   | Scale                                         |
 | <kbd>X</kbd> / <kbd>Y</kbd> / <kbd>Z</kbd>                     | Axis Constraint                               |
 | <kbd>SHIFT</kbd> + <kbd>X</kbd> / <kbd>Y</kbd> / <kbd>Z</kbd>  | Planar Constraint                             |
+| <kbd>V</kbd>                                                   | View Constraint                               |
 | <kbd>SHIFT</kbd> + <kbd>D</kbd>                                | Duplicate                                     |
 | <kbd>DEL</kbd>                                                 | Delete                                        |
 

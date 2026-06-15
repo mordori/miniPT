@@ -83,7 +83,7 @@ void add_mesh(t_context* ctx, const char* name, uint32_t mat_id, bool is_selecte
 	add_object(ctx, &obj, is_selected);
 }
 
-bool hit_mesh(const t_shape* shape, const t_ray* ray, t_hit* hit, uint32_t flags) {
+bool hit_mesh(const t_shape* shape, const t_ray* ray, t_hit* hit, bool is_double_sided) {
 	const t_mesh* mesh = &shape->mesh;
-	return hit_bvh_mesh(mesh, ray, hit, flags);
+	return hit_bvh_mesh(mesh, ray, hit, is_double_sided);
 }

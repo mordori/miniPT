@@ -25,6 +25,7 @@ void init_camera(t_context* ctx, t_vec3 position, t_vec3 orientation, float fov)
 	cam->init_rot = cam->transform.rot;
 	cam->init_focal_len_mm = cam->focal_len_mm;
 	cam->init_focus_dist = cam->focus_dist;
+	cam->init_exposure = cam->exposure;
 }
 
 t_vec3 sample_defocus_disk(const t_context* ctx, t_pixel* pixel) {

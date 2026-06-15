@@ -1,4 +1,5 @@
 #include "camera.h"
+#include "lib_math.h"
 
 void cam_look(t_context* ctx, t_vec2i delta) {
 	t_camera* cam = &ctx->scene.cam;

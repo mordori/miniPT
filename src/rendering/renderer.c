@@ -1,3 +1,4 @@
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "defines.h"
@@ -149,7 +150,8 @@ void start_render(t_renderer* r, const t_camera* cam) {
 	r->cam = *cam;
 	r->ray_bounces = r->render_bounces;
 	r->frame = 1;
-	r->render_time = time_now();
+	r->start_time = time_now();
+	r->render_complete = false;
 	pthread_cond_broadcast(&r->cond);
 	pthread_mutex_unlock(&r->mutex);
 }
@@ -170,8 +172,9 @@ void cancel_render(t_renderer* r) {
 		pthread_cond_wait(&r->cond, &r->mutex);
 	atomic_store(&r->render_cancel, false);
 	r->frame_complete = false;
+	r->render_complete = false;
 	r->frame = 1;
-	r->render_time = time_now();
+	r->start_time = time_now();
 	r->blit_time = 0;
 }
 
@@ -185,15 +188,17 @@ void set_mode_preview(t_context* ctx, t_renderer* r, bool* update) {
 	r->frame = 1;
 	r->tile_index = 0;
 	*update = false;
-	r->render_time = time_now();
+	r->render_complete = false;
+	r->start_time = time_now();
 	pthread_cond_broadcast(&r->cond);
 }
 
 void set_mode_rendered(t_renderer* r) {
 	if (r->mode != RENDERED) {
 		r->blit_time = 0;
-		r->render_time = time_now();
+		r->start_time = time_now();
 		r->frame = 1;
+		r->render_complete = false;
 	}
 	r->mode = RENDERED;
 	r->ray_bounces = r->render_bounces;
@@ -215,10 +220,7 @@ bool set_render_mode(t_context* ctx, mlx_key_data_t keydata) {
 				ctx->editor.request_obj_tab = true;
 			}
 		} else {
-			// if (ctx->editor.selected_obj)
 			reset_editor(ctx);
-			// else if (ctx->editor.mode != EDIT_DEFAULT)
-			// 	end_edit_action(ctx);
 			ctx->editor.mode = EDIT_DEFAULT;
 			r->mode = RENDERED;
 			ctx->editor.request_scene_tab = true;

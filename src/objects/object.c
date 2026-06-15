@@ -123,7 +123,7 @@ bool hit_object(const t_object* obj, const t_ray* ray, t_hit* hit) {
 	bool result = false;
 	switch (obj->type) {
 		case OBJ_SPHERE: result = hit_sphere(shape, &r, hit); break;
-		case OBJ_MESH: result = hit_mesh(shape, &r, hit, obj->flags); break;
+		case OBJ_MESH: result = hit_mesh(shape, &r, hit, obj->mat->is_double_sided); break;
 	}
 	if (result) {
 		hit->obj = (t_object*)obj;

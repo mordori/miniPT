@@ -28,9 +28,10 @@ void set_default_view(t_context* ctx) {
 	cam->init_rot = cam->transform.rot;
 	cam->init_focal_len_mm = cam->focal_len_mm;
 	cam->init_focus_dist = cam->focus_dist;
+	cam->init_exposure = cam->exposure;
 }
 
-bool reset_camera(t_context* ctx) {
+void reset_camera(t_context* ctx) {
 	t_renderer* r = &ctx->renderer;
 	atomic_store(&r->render_cancel, true);
 	while (r->threads_running)
@@ -41,6 +42,7 @@ bool reset_camera(t_context* ctx) {
 	cam->transform.rot = cam->init_rot;
 	cam->focal_len_mm = cam->init_focal_len_mm;
 	cam->focus_dist = cam->init_focus_dist;
+	cam->exposure = cam->init_exposure;
 	cam->f_stop = 16.0f;
 	cam->shutter_speed = 1.0f / 100.0f;
 	cam->iso = 100.0f;
@@ -51,7 +53,6 @@ bool reset_camera(t_context* ctx) {
 	ctx->renderer.cam = *cam;
 	cam->yaw = atan2f(cam->forward.x, cam->forward.z);
 	cam->pitch = asinf(clampf(cam->forward.y, -1.0f, 1.0f));
-	return true;
 }
 
 bool frame_camera(t_context* ctx, t_object* obj) {
@@ -91,9 +92,8 @@ static inline bool set_cam_state(t_context* ctx) {
 			state = CAM_ZOOM;
 		else if (mlx_is_mouse_down(ctx->mlx, MLX_MOUSE_BUTTON_MIDDLE))
 			state = CAM_PAN;
-	} else if (ctx->renderer.mode != SOLID) {
-		if (mlx_is_mouse_down(ctx->mlx, MLX_MOUSE_BUTTON_RIGHT))
-			state = CAM_TURN;
+	} else if (mlx_is_mouse_down(ctx->mlx, MLX_MOUSE_BUTTON_RIGHT)) {
+		state = CAM_TURN;
 	}
 	if (state != CAM_DEFAULT) {
 		begin_cam_action(ctx, state);

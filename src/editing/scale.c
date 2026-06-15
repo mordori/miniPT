@@ -22,7 +22,7 @@ void obj_scale(t_context* ctx, float magnitude) {
 		};
 	}
 	t_vec3 scale = vec3_mul(obj->transform.scale, axis);
-	obj->transform.scale.v = _mm_max_ps(scale.v, (t_vec4){ { 0.1f, 0.1f, 0.1f, 1.0f } }.v);
+	obj->transform.scale.v = _mm_max_ps(scale.v, (t_vec4){ { 0.01f, 0.01f, 0.01f, 1.0f } }.v);
 	update_transform(&obj->transform);
 	update_bounds(obj);
 	if (get_max_bounds_dim(obj) > WORLD_LIMIT)

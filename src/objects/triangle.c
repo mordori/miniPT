@@ -4,7 +4,7 @@
 #include "utils.h"
 
 // Akenine-Möller & Trumbore
-bool hit_triangle(const t_triangle* tri, const t_ray* ray, t_hit* hit, uint32_t flags) {
+bool hit_triangle(const t_triangle* tri, const t_ray* ray, t_hit* hit, bool is_double_sided) {
 	t_vec3 e1 = vec3_sub(tri->v1, tri->v0);
 	t_vec3 e2 = vec3_sub(tri->v2, tri->v0);
 	t_vec3 pvec = vec3_cross(ray->dir, e2);
@@ -13,7 +13,7 @@ bool hit_triangle(const t_triangle* tri, const t_ray* ray, t_hit* hit, uint32_t 
 	if (fabsf(det) < 1e-15f)
 		return false;
 
-	if (!(flags & MAT_DOUBLE_SIDED) && det < 0.0f)
+	if (!is_double_sided && det < 0.0f)
 		return false;
 
 	float inv_det = 1.0 / det;

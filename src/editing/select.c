@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdint.h>
 
 #include "defines.h"
 #include "editing.h"
@@ -7,9 +8,9 @@
 #include "scene.h"
 #include "utils.h"
 
-static inline void select_obj(t_context* ctx, t_ray* ray, t_hit* hit);
+static inline bool select_obj(t_context* ctx, t_ray* ray, t_hit* hit, uint32_t flags);
 
-void select_object(t_context* ctx) {
+bool select_object(t_context* ctx) {
 	t_vec2i mouse;
 	mlx_get_mouse_pos(ctx->mlx, &mouse.x, &mouse.y);
 
@@ -19,18 +20,30 @@ void select_object(t_context* ctx) {
 	t_ray ray = new_ray(r->cam.transform.pos, vec3_normalize(vec3_sub(pixel_loc, r->cam.transform.pos)));
 	t_hit hit = new_hit(0);
 
-	bool hitBVH = hit_bvh_editing(ctx->scene.geo.bvh_root_idx, &ray, &hit, ctx->scene.geo.bvh_nodes);
-	if (hitBVH)
-		select_obj(ctx, &ray, &hit);
-	else if (ctx->editor.selected_obj && !hit_object(ctx->editor.selected_obj, &ray, &hit))
-		deselect_object(ctx);
+	bool dirty = false;
+	uint32_t flags = ctx->editor.selected_obj && !(ctx->editor.selected_obj->flags & FLAG_OBJ_HIDDEN_SCENE) &&
+		!(ctx->editor.selected_obj->flags & FLAG_OBJ_HIDDEN_CAM);
+	bool hitBVH = false;
+	if (r->mode == SOLID)
+		hitBVH = hit_bvh_editing(ctx->scene.geo.bvh_root_idx, &ray, &hit, ctx->scene.geo.bvh_nodes);
+	else
+		hitBVH = hit_bvh(ctx->scene.geo.bvh_root_idx, &ray, &hit, ctx->scene.geo.bvh_nodes);
+	if (hitBVH) {
+		dirty = select_obj(ctx, &ray, &hit, flags);
+	} else if ((r->mode != SOLID && !(flags && hit_object(ctx->editor.selected_obj, &ray, &hit))) ||
+		(r->mode == SOLID && !hit_object(ctx->editor.selected_obj, &ray, &hit))) {
+		dirty = deselect_object(ctx);
+	}
 	ctx->editor.selection_time = engine_time();
+	return dirty;
 }
 
-static inline void select_obj(t_context* ctx, t_ray* ray, t_hit* hit) {
-	bool hitSelectedObj = hit_object(ctx->editor.selected_obj, ray, hit);
+static inline bool select_obj(t_context* ctx, t_ray* ray, t_hit* hit, uint32_t flags) {
+	if (ctx->renderer.mode == SOLID)
+		flags = true;
+	bool hitSelectedObj = flags && hit_object(ctx->editor.selected_obj, ray, hit);
 	if (hitSelectedObj || hit->obj == ctx->scene.env.dir_light.obj)
-		return;
+		return false;
 
 	if (ctx->editor.selected_obj)
 		vector_try_add(ctx, &ctx->scene.geo.objs, ctx->editor.selected_obj);
@@ -48,6 +61,7 @@ static inline void select_obj(t_context* ctx, t_ray* ray, t_hit* hit) {
 		}
 	}
 	ctx->editor.request_obj_tab = true;
+	return true;
 }
 
 bool deselect_object(t_context* ctx) {

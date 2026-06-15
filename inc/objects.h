@@ -13,10 +13,10 @@ bool del_object(t_context* ctx);
 bool dup_object(t_context* ctx);
 void add_object(t_context* ctx, t_object* obj, bool is_selected);
 
-bool hit_mesh(const t_shape* shape, const t_ray* ray, t_hit* hit, uint32_t flags);
+bool hit_mesh(const t_shape* shape, const t_ray* ray, t_hit* hit, bool is_double_sided);
 bool hit_object(const t_object* obj, const t_ray* ray, t_hit* hit);
 bool hit_sphere(const t_shape* shape, const t_ray* ray, t_hit* hit);
-bool hit_triangle(const t_triangle* tri, const t_ray* ray, t_hit* hit, uint32_t flags);
+bool hit_triangle(const t_triangle* tri, const t_ray* ray, t_hit* hit, bool is_double_sided);
 
 bool test_body_hit(const t_ray* ray, float params[2], float t);
 void update_transform(t_transform* t);

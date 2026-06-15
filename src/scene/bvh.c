@@ -38,7 +38,7 @@ static inline uint32_t build_bvh(t_context* ctx, const t_object** objs, size_t n
 
 	if (n == 1) {
 		node->obj = (t_object*)objs[0];
-		node->aabb = get_object_bounds(node->obj);
+		node->aabb = node->obj->aabb;
 		return idx;
 	}
 
@@ -71,26 +71,29 @@ bool hit_bvh(uint32_t root_idx, const t_ray* ray, t_hit* hit, t_bvh_node* tree) 
 	if (root_idx == 0)
 		return false;
 
-	t_bvh_element bvh = { 0 };
-	bvh.stack[bvh.i++] = root_idx;
+	int32_t i = 0;
+	uint32_t stack[64];
+	bool hit_anything = false;
 
-	while (bvh.i > 0) {
-		bvh.node = &tree[bvh.stack[--bvh.i] - 1];
-		if (!hit_aabb(&bvh.node->aabb, ray, hit->t))
+	stack[i++] = root_idx;
+
+	while (i > 0) {
+		t_bvh_node* node = &tree[stack[--i] - 1];
+		if (!hit_aabb(&node->aabb, ray, hit->t))
 			continue;
 
-		if (bvh.node->obj) {
-			bvh.temp = *hit;
-			if (!(bvh.node->obj->flags & OBJ_HIDDEN_SCENE) && !(hit->is_primary && (bvh.node->obj->flags & OBJ_HIDDEN_CAM)) &&
-				hit_object(bvh.node->obj, ray, &bvh.temp)) {
-				bvh.res = true;
-				*hit = bvh.temp;
+		if (node->obj) {
+			t_hit temp = *hit;
+			if (!(node->obj->flags & FLAG_OBJ_HIDDEN_SCENE) && !(hit->is_primary && (node->obj->flags & FLAG_OBJ_HIDDEN_CAM)) &&
+				hit_object(node->obj, ray, &temp)) {
+				hit_anything = true;
+				*hit = temp;
 			}
 			continue;
 		}
-		branch_idx(ray, bvh.node, bvh.stack, &bvh.i);
+		branch_idx(ray, node, stack, &i);
 	}
-	return bvh.res;
+	return hit_anything;
 }
 
 bool hit_bvh_shadow(uint32_t root_idx, const t_ray* ray, float dist, t_bvh_node* tree) {
@@ -108,7 +111,7 @@ bool hit_bvh_shadow(uint32_t root_idx, const t_ray* ray, float dist, t_bvh_node*
 
 		if (node->obj) {
 			t_hit temp = { .t = dist };
-			if (!(node->obj->flags & OBJ_NO_CAST_SHADOW) && hit_object(node->obj, ray, &temp))
+			if (!(node->obj->flags & FLAG_OBJ_NO_CAST_SHADOW) && hit_object(node->obj, ray, &temp))
 				return true;
 			continue;
 		}
@@ -121,25 +124,28 @@ bool hit_bvh_editing(uint32_t root_idx, const t_ray* ray, t_hit* hit, t_bvh_node
 	if (root_idx == 0)
 		return false;
 
-	t_bvh_element bvh = { 0 };
-	bvh.stack[bvh.i++] = root_idx;
+	int32_t i = 0;
+	uint32_t stack[64];
+	bool hit_anything = false;
 
-	while (bvh.i > 0) {
-		bvh.node = &tree[bvh.stack[--bvh.i] - 1];
-		if (!hit_aabb(&bvh.node->aabb, ray, hit->t))
+	stack[i++] = root_idx;
+
+	while (i > 0) {
+		t_bvh_node* node = &tree[stack[--i] - 1];
+		if (!hit_aabb(&node->aabb, ray, hit->t))
 			continue;
 
-		if (bvh.node->obj) {
-			bvh.temp = *hit;
-			if (!(bvh.node->obj->flags & OBJ_HIDDEN_SCENE) && hit_object(bvh.node->obj, ray, &bvh.temp)) {
-				bvh.res = true;
-				*hit = bvh.temp;
+		if (node->obj) {
+			t_hit temp = *hit;
+			if (hit_object(node->obj, ray, &temp)) {
+				hit_anything = true;
+				*hit = temp;
 			}
 			continue;
 		}
-		branch_idx(ray, bvh.node, bvh.stack, &bvh.i);
+		branch_idx(ray, node, stack, &i);
 	}
-	return bvh.res;
+	return hit_anything;
 }
 
 static inline void branch_idx(const t_ray* ray, const t_bvh_node* node, uint32_t* stack, int32_t* i) {
@@ -193,25 +199,28 @@ static inline void sort_bvh_mesh_triangles(t_bvh_node* node, t_triangle* tris, s
 	}
 }
 
-bool hit_bvh_mesh(const t_mesh* mesh, const t_ray* ray, t_hit* hit, uint32_t flags) {
+bool hit_bvh_mesh(const t_mesh* mesh, const t_ray* ray, t_hit* hit, bool is_double_sided) {
 	if (!mesh->bvh_root_idx || !mesh->bvh_nodes)
 		return false;
 
-	t_bvh_element bvh = { 0 };
-	bvh.stack[bvh.i++] = mesh->bvh_root_idx;
+	int32_t i = 0;
+	uint32_t stack[64];
+	bool hit_anything = false;
 
-	while (bvh.i > 0) {
-		bvh.node = &mesh->bvh_nodes[bvh.stack[--bvh.i] - 1];
-		if (!hit_aabb(&bvh.node->aabb, ray, hit->t))
+	stack[i++] = mesh->bvh_root_idx;
+
+	while (i > 0) {
+		t_bvh_node* node = &mesh->bvh_nodes[stack[--i] - 1];
+		if (!hit_aabb(&node->aabb, ray, hit->t))
 			continue;
 
-		if (bvh.node->tri_count > 0) {
-			for (uint32_t i = 0; i < bvh.node->tri_count; ++i)
-				if (hit_triangle(&mesh->triangles[bvh.node->tri_idx + i], ray, hit, flags))
-					bvh.res = true;
+		if (node->tri_count > 0) {
+			for (uint32_t j = 0; j < node->tri_count; ++j)
+				if (hit_triangle(&mesh->triangles[node->tri_idx + j], ray, hit, is_double_sided))
+					hit_anything = true;
 			continue;
 		}
-		branch_idx(ray, bvh.node, bvh.stack, &bvh.i);
+		branch_idx(ray, node, stack, &i);
 	}
-	return bvh.res;
+	return hit_anything;
 }
