@@ -23,7 +23,8 @@ void init_scene(t_context* ctx) {
 		.albedo = (t_vec3){ { 0.5f, 0.5f, 0.5f, 1.0f } },
 		.roughness = 0.5f,
 		.ior = 1.4f,
-		.normal_strength = 1.0f
+		.normal_strength = 1.0f,
+		.is_double_sided = true
 	};
 	new_material(ctx, &mat);
 

@@ -9,8 +9,6 @@
 #include "scene.h"
 #include "ui.hpp"
 
-static inline void flag_update(t_context* ctx, bool* update);
-
 void process_input(t_context* ctx, bool* update) {
 	if (ctx->renderer.mode != RENDERED)
 		while (ctx->renderer.threads_running)
@@ -24,21 +22,22 @@ void process_input(t_context* ctx, bool* update) {
 
 	t_vec2i mouseDelta = get_mouse_delta(ctx);
 	bool dirty = false;
+	bool dirty_cam = false;
 	if (!ui_want_mouse()) {
-		dirty |= control_camera(ctx, mouseDelta);
+		dirty_cam |= control_camera(ctx, mouseDelta);
 		dirty |= edit_object(ctx, mouseDelta);
 	}
-	dirty |= ui_check_dirty();
-	if (dirty)
-		flag_update(ctx, update);
-}
-
-static inline void flag_update(t_context* ctx, bool* update) {
-	*update = true;
-	update_camera(ctx, &ctx->scene.cam);
-	ctx->renderer.cam = ctx->scene.cam;
-	if (ctx->renderer.mode == RENDERED)
-		atomic_store(&ctx->renderer.render_cancel, true);
+	dirty_cam |= ui_check_dirty();
+	dirty |= dirty_cam;
+	if (dirty_cam) {
+		update_camera(ctx, &ctx->scene.cam);
+		ctx->renderer.cam = ctx->scene.cam;
+	}
+	if (dirty) {
+		*update = true;
+		if (ctx->renderer.mode == RENDERED)
+			atomic_store(&ctx->renderer.render_cancel, true);
+	}
 }
 
 void key_hook(mlx_key_data_t keydata, void* param) {

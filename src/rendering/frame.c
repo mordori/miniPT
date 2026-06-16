@@ -1,7 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include "MLX42.h"
 #include "defines.h"
 #include "input.h"
 #include "lib_math.h"
@@ -134,11 +133,13 @@ static inline void copy_frame_buffer_preview(const t_context* ctx, const uint32_
 	uint32_t i = 0;
 	while (i < limit) {
 		if (m[i] > 0.0f) {
+			// clang-format off
 			mask = 0u -
 				(((i % width && m[i - 1] < 0.0f && fabsf(m[i - 1]) > m[i] - 0.05f) ||
-					((i + 1) % width && m[i + 1] < 0.0f && fabsf(m[i + 1]) > m[i] - 0.05f) ||
-					(i >= width && m[i - width] < 0.0f && fabsf(m[i - width]) > m[i] - 0.05f) ||
-					(i + width < limit && m[i + width] < 0.0f && fabsf(m[i + width]) > m[i] - 0.05f)));
+				 ((i + 1) % width && m[i + 1] < 0.0f && fabsf(m[i + 1]) > m[i] - 0.05f) ||
+				  (i >= width && m[i - width] < 0.0f && fabsf(m[i - width]) > m[i] - 0.05f) ||
+				  (i + width < limit && m[i + width] < 0.0f && fabsf(m[i + width]) > m[i] - 0.05f)));
+			// clang-format on
 		} else {
 			mask = 0u;
 		}

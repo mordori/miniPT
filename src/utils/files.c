@@ -1,14 +1,13 @@
+#include <errno.h>
 #include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "libft_io.h"
-#include "libft_str.h"
 #include "utils.h"
 
 ssize_t try_write(t_context* ctx, int fd, const char* src) {
-	size_t len = ft_strlen(src);
+	size_t len = strlen(src);
 	if (len > SIZE_MAX)
 		fatal_error(ctx, errors(ERR_SIZE_MAX), __FILE__, __LINE__);
 
@@ -40,13 +39,6 @@ ssize_t try_read(t_context* ctx, int fd, char* buf, size_t n_bytes) {
 		fatal_error(ctx, errors(ERR_READ), __FILE__, __LINE__);
 	}
 	return bytes;
-}
-
-int try_gnl(t_context* ctx, int fd, char** line) {
-	int status = get_next_line(fd, line);
-	if (status == GNL_ERROR)
-		fatal_error(ctx, errors(ERR_GNL), __FILE__, __LINE__);
-	return status;
 }
 
 void make_dir(t_context* ctx, const char* path) {

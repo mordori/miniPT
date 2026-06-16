@@ -10,13 +10,6 @@ static inline void initialize(t_context* ctx);
 
 void* g_ui_ctx = NULL;
 
-/**
- * @brief	Entry point to the program.
- * @mainpage
- *
- * @author		Mika Yli-Pentti		https://github.com/mordori
- * @author		Wassem Showeky		https://github.com/wshoweky
- */
 int main(void) {
 	_MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
 	_MM_SET_DENORMALS_ZERO_MODE(_MM_DENORMALS_ZERO_ON);
@@ -24,7 +17,7 @@ int main(void) {
 	t_context ctx = { 0 };
 	g_ui_ctx = &ctx;
 	initialize(&ctx);
-	try_write(&ctx, STDOUT_FILENO, "\033[?25h\n\nGoodbye!\n\n");
+	try_write(&ctx, STDOUT_FILENO, "\033[?25h\nGoodbye!\n\n");
 	clean_context(&ctx);
 	return EXIT_SUCCESS;
 }

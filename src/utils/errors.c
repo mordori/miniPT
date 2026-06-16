@@ -1,22 +1,20 @@
-#include "libft_io.h"
-#include "libft_utils.h"
 #include "utils.h"
 
 void fatal_error(t_context* ctx, const char* msg, const char* file, int line) {
 	char str[INT32_LENGTH + 1];
 
-	ft_putstr_fd("\nError:\n", STDERR_FILENO);
+	putstr_fd("\nError:\n", STDERR_FILENO);
 	if (msg)
-		ft_putendl_fd(msg, STDERR_FILENO);
+		putendl_fd(msg, STDERR_FILENO);
 	if (file)
-		ft_putstr_fd(file, STDERR_FILENO);
+		putstr_fd(file, STDERR_FILENO);
 	if (ctx && line > 0) {
-		ft_putstr_fd(", line: ", STDERR_FILENO);
+		putstr_fd(", line: ", STDERR_FILENO);
 		int_to_str(line, str);
-		ft_putendl_fd(str, STDERR_FILENO);
+		putendl_fd(str, STDERR_FILENO);
 	}
 	if (ctx && ctx->mlx) {
-		ft_putstr_fd("MLX42: ", STDERR_FILENO);
+		putstr_fd("MLX42: ", STDERR_FILENO);
 		perror(mlx_strerror(mlx_errno));
 	}
 	exit(EXIT_FAILURE);

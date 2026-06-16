@@ -13,7 +13,6 @@ extern "C" {
 #include "defines.h"
 #include "editing.h"
 #include "lib_math.h"
-#include "libft_vector.h"
 #include "materials.h"
 #include "objects.h"
 #include "rendering.h"

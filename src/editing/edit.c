@@ -68,7 +68,7 @@ bool edit_object(t_context* ctx, t_vec2i delta) {
 
 	edit_action(ctx, delta);
 	prev_mode = current_mode;
-	return delta.x != 0 || delta.y != 0;
+	return true;
 }
 
 float eval_speed(t_context* ctx) {

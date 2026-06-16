@@ -1,5 +1,6 @@
 #include "camera.h"
 #include "defines.h"
+#include "utils.h"
 
 void apply_cam_action(t_context* ctx, t_vec2i delta) {
 	t_camera* cam = &ctx->scene.cam;
@@ -26,6 +27,7 @@ void end_cam_action(t_context* ctx) {
 	mlx_set_mouse_pos(ctx->mlx, ctx->mouse.pos_orig.x, ctx->mouse.pos_orig.y);
 	ctx->mouse.pos = ctx->mouse.pos_orig;
 	ctx->mouse.pos_prev = ctx->mouse.pos_orig;
+	ctx->editor.selection_time = engine_time();
 }
 
 bool is_cam_action_active(const t_context* ctx) {

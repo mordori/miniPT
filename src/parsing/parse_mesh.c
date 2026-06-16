@@ -1,3 +1,4 @@
+#include <ctype.h>
 #include <fcntl.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -9,7 +10,6 @@
 
 #include "defines.h"
 #include "lib_math.h"
-#include "libft_utils.h"
 #include "utils.h"
 
 static inline void count_elements(char* ptr, char* end, uint32_t* v, uint32_t* vn, uint32_t* vt, uint32_t* tris);
@@ -21,6 +21,8 @@ static inline void parse_face(char** ptr, char* end, uint32_t* tri_i, t_triangle
 static inline void parse_vertex(char** ptr, int32_t* v, int32_t* uv, int32_t* n);
 static inline uint32_t get_index(int32_t i, uint32_t count);
 static inline int32_t fast_atoi(char** str);
+static inline float fast_atof(char** str);
+static inline bool is_whitespace(char c);
 
 void parse_obj(t_context* ctx, const char* file, t_mesh* mesh) {
 	int fd = open(file, O_RDONLY);
@@ -112,7 +114,7 @@ static inline void count_elements(char* ptr, char* end, uint32_t* v, uint32_t* v
 			while (*f_ptr != '\n' && *f_ptr != '\r' && f_ptr < end) {
 				if (*f_ptr != ' ' && *f_ptr != '\t') {
 					++verts;
-					while (!ft_isspace(*f_ptr) && f_ptr < end)
+					while (!is_whitespace(*f_ptr) && f_ptr < end)
 						++f_ptr;
 				} else {
 					++f_ptr;
@@ -129,15 +131,15 @@ static inline void count_elements(char* ptr, char* end, uint32_t* v, uint32_t* v
 }
 
 static inline void parse_vec3(char** ptr, t_vec3* vec) {
-	vec->x = ft_atof(ptr);
-	vec->y = ft_atof(ptr);
-	vec->z = -ft_atof(ptr);
+	vec->x = fast_atof(ptr);
+	vec->y = fast_atof(ptr);
+	vec->z = -fast_atof(ptr);
 	vec->w = 0.0f;
 }
 
 static inline void parse_vec2(char** ptr, t_vec2* vec) {
-	vec->u = ft_atof(ptr);
-	vec->v = ft_atof(ptr);
+	vec->u = fast_atof(ptr);
+	vec->v = fast_atof(ptr);
 }
 
 static inline void parse_face(char** ptr, char* end, uint32_t* tri_i, t_triangle* triangles, t_vec3* verts, t_vec3* normals, t_vec2* uvs,
@@ -200,7 +202,7 @@ static inline uint32_t get_index(int32_t i, uint32_t count) {
 }
 
 static inline int32_t fast_atoi(char** str) {
-	while (ft_isspace(**str))
+	while (is_whitespace(**str))
 		(*str)++;
 
 	int32_t sign = 1;
@@ -212,9 +214,44 @@ static inline int32_t fast_atoi(char** str) {
 	}
 
 	int32_t number = 0;
-	while (ft_isdigit(**str)) {
+	while (isdigit(**str)) {
 		number = number * 10 + (**str - '0');
 		(*str)++;
 	}
 	return sign * number;
+}
+
+static inline float fast_atof(char** str) {
+	while (is_whitespace(**str))
+		(*str)++;
+
+	float sign = 1.0f;
+	if (**str == '-') {
+		sign = -1.0f;
+		(*str)++;
+	} else if (**str == '+') {
+		(*str)++;
+	}
+
+	float number = 0.0f;
+	while (isdigit(**str)) {
+		number = number * 10.0 + (float)(**str - '0');
+		(*str)++;
+	}
+
+	if (**str == '.') {
+		(*str)++;
+		float fraction = 0.1f;
+		while (isdigit(**str)) {
+			number += (float)(**str - '0') * fraction;
+			fraction *= 0.1f;
+			(*str)++;
+		}
+	}
+	return sign * number;
+}
+
+static inline bool is_whitespace(char c) {
+	c = (unsigned char)c;
+	return c == ' ' || (c >= '\t' && c <= '\r');
 }

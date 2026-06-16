@@ -9,8 +9,6 @@
 #include "MLX42.h"
 #include "OpenImageDenoise/oidn.h"
 #include "lib_math.h"
-#include "libft_defs.h"
-#include "libft_vector.h"
 
 #define WIDTH 1920
 #define HEIGHT 1080
@@ -49,6 +47,11 @@
 
 #define UINT_PRIME 15485863u
 #define FP_PRIME 1619u
+
+#define VECTOR_SIZE 4
+#define INT32_LENGTH 11
+#define INT64_LENGTH 20
+#define ERROR -1
 
 enum e_err_code {
 	ERR_ARGINVL,
@@ -152,6 +155,7 @@ typedef enum e_edit_mode t_edit_mode;
 typedef enum e_axis t_axis;
 typedef enum e_bg_mode t_bg_mode;
 
+typedef struct s_vector t_vector;
 typedef struct s_context t_context;
 typedef struct s_bvh_node t_bvh_node;
 typedef struct s_aabb t_aabb;
@@ -182,6 +186,14 @@ typedef union u_shape t_shape;
 typedef union u_ui t_ui;
 
 typedef mlx_image_t t_image;
+
+struct s_vector {
+	void** items;
+	size_t size;
+	size_t total;
+	void (*del)(void*);
+	bool is_shrink;
+};
 
 union u_ui {
 	struct {

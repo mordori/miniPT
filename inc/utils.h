@@ -61,4 +61,23 @@ void open_image_viewer(const char* filepath);
 
 void eval_hit_normal_geo(const t_ray* ray, t_hit* hit, t_vec3 geo_n, t_vec3 n);
 
+bool vector_add(t_vector* vec, void* item);
+bool vector_free(t_vector* vec, ...);
+bool vector_del(t_vector* vec, size_t index);
+void* vector_get(t_vector* vec, size_t index);
+bool vector_init(t_vector* vec, bool is_shrink, void (*del)(void*));
+bool vector_set(t_vector* vec, size_t index, void* item);
+size_t vector_size(t_vector* vec);
+size_t vector_total(t_vector* vec);
+void* vector_getlast(t_vector* vec);
+bool vector_insert(t_vector* vec, void* item, size_t index);
+void vector_clean_items(t_vector* vec, void (*del)(void*));
+bool vector_remove(t_vector* vec, void* item);
+bool vector_del2(t_vector* vec, void* item);
+
+ssize_t putstr_fd(const char* s, int fd);
+ssize_t putendl_fd(const char* s, int fd);
+size_t count_digits(long long n, const size_t len);
+void int_to_str(int n, char* str);
+
 #endif
