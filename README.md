@@ -18,7 +18,6 @@
 - Modest post-processing stack with ACES-calibrated tonemapping
 - High-performance CPU parallelism with multi-threading, memory efficiency, and systems-level optimisations enabling vectorisation of data
 - Modern PBR pipeline with microfacet BSDF
-- Bilinear texture filtering and normal mapping
 - Physical camera with turntable controller
 - Object Edit Mode inspired by Blender
 - Integrates Intel Open Image Denoise for cleaning up the remaining noise from the completed render
@@ -31,8 +30,15 @@
 - Anisotropic & clear coat BRDF
 - BTDF for BSDF
 - Improve the naive median-split BVH
+- Hot loading of meshes and textures
+- Hotkeys for parameter sliders
+- Object list
+- Texture inputs for material parameters
+- Scene presets
+- Improve stability and performance
 
 #### Future Work
+- Integrate ImGuizmo
 - Support for MacOS and Apple Silicon
 - Image based lighting
 - EV100 exposure triangle
@@ -87,14 +93,23 @@ Our approach optimises memory alignment for SIMD (Single Instruction, Multiple D
 - Documentation under construction
 
 ## Prerequisites
-
-- Git LFS extension
+- clang
 - CMake
 - GLFW
+- Git LFS extension
+
+This will install the nessessary packages on a Debian like Linux
+```bash
+sudo apt update
+sudo apt install -y build-essential clang cmake
+sudo apt install -y xorg-dev libx11-dev libglfw3-dev libglfw3
+sudo apt install -y git-lfs
+git lfs install
+```
 
 > [!NOTE]
 >
-> Includes [MLX42](https://github.com/codam-coding-college/MLX42), a minimal graphics library required by the subject. It handles window creation, input hooks, and manages a frame buffer to which we copy ours.
+> Includes [MLX42](https://github.com/codam-coding-college/MLX42), a minimal graphics library. It handles window creation, input hooks, and manages a frame buffer to which we copy ours.
 
 > [!IMPORTANT]
 >

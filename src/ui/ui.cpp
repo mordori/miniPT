@@ -13,10 +13,10 @@ extern "C" {
 #include "defines.h"
 #include "editing.h"
 #include "lib_math.h"
+#include "lights.h"
 #include "materials.h"
 #include "objects.h"
 #include "rendering.h"
-#include "scene.h"
 #include "ui.hpp"
 #include "utils.h"
 }
@@ -194,9 +194,18 @@ void render_ui(void* param) {
 					ImVec2 button_size(-FLT_MIN, 0.0f);
 
 					ImGui::TableNextColumn();
-					ImGui::BeginDisabled();
-					if (ImGui::Button("Area", button_size)) {}
-					ImGui::EndDisabled();
+					if (ImGui::Button("Area", button_size)) {
+						atomic_store(&r->render_cancel, true);
+						pthread_mutex_lock(&r->mutex);
+						while (r->threads_running)
+							pthread_cond_wait(&r->cond, &r->mutex);
+
+						deselect_object(ctx);
+						add_light(ctx, 1, true);
+
+						pthread_mutex_unlock(&r->mutex);
+						g_ui_dirty = true;
+					}
 					ImGui::EndTable();
 				}
 			}
@@ -341,7 +350,7 @@ void render_ui(void* param) {
 					case BG_IMAGE: {
 						ImGui::BeginDisabled();
 						const char* current_tex = ctx->scene.env.skydome.pixels ? "sky.png" : "None";
-						if (ImGui::BeginCombo("Texture", current_tex)) {
+						if (ImGui::BeginCombo("##skydome", current_tex)) {
 							for (int i = 0; i < ctx->scene.assets.tex_count; i++) {
 								if (!ctx->scene.assets.textures[i].loaded)
 									continue;
@@ -355,21 +364,25 @@ void render_ui(void* param) {
 							ImGui::EndCombo();
 						}
 						ImGui::EndDisabled();
-						if (ctx->scene.env.has_dir_light) {
-							float temp = ctx->scene.cam.skydome_uv_offset.u * 360.0f;
-							if (ImGui::SliderFloat("Rotate", &temp, 0.0f, 360.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp)) {
-								ctx->scene.cam.skydome_uv_offset.u = temp / 360.0f;
-								if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
-									rotate_skydome(ctx);
-									g_ui_dirty = true;
-								}
-							}
-							if (ImGui::IsItemDeactivatedAfterEdit()) {
+						static bool is_sun = ctx->scene.env.has_dir_light;
+						if (is_sun) {
+							ImGui::SameLine();
+							if (ImGui::Checkbox("Sun", &ctx->scene.env.has_dir_light))
+								g_ui_dirty = true;
+						}
+						float temp = ctx->scene.cam.skydome_uv_offset.u * 360.0f;
+						if (ImGui::SliderFloat("Rotate", &temp, 0.0f, 360.0f, "%.1f", ImGuiSliderFlags_AlwaysClamp)) {
+							ctx->scene.cam.skydome_uv_offset.u = temp / 360.0f;
+							if (ImGui::IsMouseDragging(ImGuiMouseButton_Left)) {
 								rotate_skydome(ctx);
 								g_ui_dirty = true;
 							}
-							g_ui_interacting |= (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left));
 						}
+						if (ImGui::IsItemDeactivatedAfterEdit()) {
+							rotate_skydome(ctx);
+							g_ui_dirty = true;
+						}
+						g_ui_interacting |= (ImGui::IsItemActive() && ImGui::IsMouseDragging(ImGuiMouseButton_Left));
 					} break;
 					default: break;
 				}
@@ -595,6 +608,8 @@ void render_ui(void* param) {
 						char preview[64];
 						if (obj->material_id == 0)
 							snprintf(preview, sizeof(preview), "Material 0 (Default)");
+						else if (obj->material_id == 1)
+							snprintf(preview, sizeof(preview), "Material 1 (Default Emissive)");
 						else
 							snprintf(preview, sizeof(preview), "Material %u", obj->material_id);
 
@@ -603,6 +618,8 @@ void render_ui(void* param) {
 								char label[64];
 								if (i == 0)
 									snprintf(label, sizeof(label), "Material 0 (Default)");
+								else if (i == 1)
+									snprintf(label, sizeof(label), "Material 1 (Default Emissive)");
 								else
 									snprintf(label, sizeof(label), "Material %u", i);
 
@@ -611,6 +628,14 @@ void render_ui(void* param) {
 									obj->material_id = i;
 									obj->mat = ((t_material**)ctx->scene.assets.materials.items)[i];
 									g_ui_dirty = true;
+
+									if (ctx->editor.is_selected_light) {
+										for (uint32_t j = 0; j < ctx->scene.env.lights.total; ++j) {
+											t_light* light = ((t_light**)ctx->scene.env.lights.items)[j];
+											if (light->obj == obj)
+												light->emission = obj->mat->emission;
+										}
+									}
 								}
 								if (is_selected)
 									ImGui::SetItemDefaultFocus();
@@ -635,7 +660,7 @@ void render_ui(void* param) {
 							ImGui::EndCombo();
 						}
 
-						bool is_default = (obj->material_id == 0);
+						bool is_default = obj->material_id == 0 || obj->material_id == 1;
 
 						ImGui::BeginDisabled();
 						if (!is_default) {
@@ -652,7 +677,7 @@ void render_ui(void* param) {
 						ImGui::Spacing();
 
 						if (is_default) {
-							ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Default Material is Read-Only");
+							ImGui::TextColored(ImVec4(0.8f, 0.8f, 0.2f, 1.0f), "Default Materials are Read-Only");
 							ImGui::BeginDisabled();
 							ImGui::Spacing();
 							ImGui::Spacing();
@@ -660,19 +685,22 @@ void render_ui(void* param) {
 
 						ImGuiColorEditFlags color_flags = ImGuiColorEditFlags_NoInputs;
 
-						ImGui::BeginDisabled();
 						if (ImGui::Checkbox("Emissive", &obj->mat->is_emissive))
 							g_ui_dirty = true;
 						apply_widget_state();
-						ImGui::EndDisabled();
 
 						if (obj->mat->is_emissive) {
-							ImGui::BeginDisabled();
 							ImGui::Spacing();
 							ImGui::Spacing();
 							if (ImGui::ColorEdit3("Color", obj->mat->emission_color.data, color_flags)) {
 								obj->mat->emission = vec3_scale(obj->mat->emission_color, obj->mat->emission_strength);
 								g_ui_dirty = true;
+
+								for (uint32_t i = 0; i < ctx->scene.env.lights.total; ++i) {
+									t_light* light = ((t_light**)ctx->scene.env.lights.items)[i];
+									if (light->obj->material_id == obj->material_id)
+										light->emission = obj->mat->emission;
+								}
 							}
 							apply_widget_state();
 							ImGui::Spacing();
@@ -683,9 +711,14 @@ void render_ui(void* param) {
 									0.0f, 1000.0f, "%.2f", mat_flags | ImGuiSliderFlags_Logarithmic)) {
 								obj->mat->emission = vec3_scale(obj->mat->emission_color, obj->mat->emission_strength);
 								g_ui_dirty |= ImGui::IsMouseDragging(ImGuiMouseButton_Left);
+
+								for (uint32_t i = 0; i < ctx->scene.env.lights.total; ++i) {
+									t_light* light = ((t_light**)ctx->scene.env.lights.items)[i];
+									if (light->obj->material_id == obj->material_id)
+										light->emission = light->obj->mat->emission;
+								}
 							}
 							apply_widget_state();
-							ImGui::EndDisabled();
 							// clang-format on
 						} else {
 							ImGui::Spacing();

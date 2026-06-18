@@ -139,7 +139,7 @@ enum e_bg_mode {
 };
 
 static const t_vec3 g_zero = { { 0.0f, 0.0f, 0.0f, 0.0f } };
-static const t_vec3 g_one = { { 1.0f, 1.0f, 1.0f, 0.0f } };
+static const t_vec3 g_one = { { 1.0f, 1.0f, 1.0f, 1.0f } };
 static const t_vec3 g_right = { { 1.0f, 0.0f, 0.0f, 0.0f } };
 static const t_vec3 g_up = { { 0.0f, 1.0f, 0.0f, 0.0f } };
 static const t_vec3 g_forward = { { 0.0f, 0.0f, 1.0f, 0.0f } };
@@ -237,7 +237,6 @@ struct __attribute__((aligned(16))) s_hit {
 };
 
 struct __attribute__((aligned(16))) s_texture {
-	mlx_texture_t* tex;
 	float* pixels;
 	uint32_t width;
 	uint32_t height;
@@ -301,7 +300,6 @@ struct __attribute__((aligned(16))) s_object {
 	uint32_t material_id;
 	uint32_t id;
 	t_material* mat;
-	t_light* light;
 	t_shape shape;
 	t_transform transform;
 	t_vec3 bounds_center;

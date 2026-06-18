@@ -4,6 +4,7 @@
 #include "defines.h"
 #include "editing.h"
 #include "lib_math.h"
+#include "lights.h"
 #include "objects.h"
 #include "scene.h"
 #include "utils.h"
@@ -49,24 +50,6 @@ void add_object(t_context* ctx, t_object* obj, bool is_selected) {
 		vector_try_add(ctx, &ctx->scene.geo.objs, new_obj);
 		init_bvh(ctx);
 	}
-
-	if (ctx->editor.is_selected_light) {
-		t_light* light = try_malloc(ctx, sizeof(t_light));
-
-		float max_scale = fminf(fminf(new_obj->transform.scale.x, new_obj->transform.scale.y), new_obj->transform.scale.z);
-		float r = new_obj->shape.sphere.radius * max_scale;
-
-		*light = (t_light){ //
-			.radius = r,
-			.radius_sq = r * r,
-			.emission = new_obj->mat->emission,
-			.max_radiance = MAX_RADIANCE,
-			.idx = ctx->scene.env.lights.total,
-			.obj = new_obj
-		};
-		vector_try_add(ctx, &ctx->scene.env.lights, light);
-		ctx->bn_stride = (BN_CO_U + ((ctx->scene.env.lights.total + 1) * 2) + 3) & ~3;
-	}
 }
 
 bool del_object(t_context* ctx) {
@@ -80,18 +63,19 @@ bool del_object(t_context* ctx) {
 		pthread_cond_wait(&r->cond, &r->mutex);
 
 	ctx->editor.selected_obj = NULL;
-	for (uint32_t i = 0; i < ctx->scene.env.lights.total; ++i) {
-		t_light* light = ctx->scene.env.lights.items[i];
-		if (light->obj == obj) {
-			vector_del2(&ctx->scene.env.lights, light);
-			for (uint32_t j = 0; j < ctx->scene.env.lights.total; ++j)
-				((t_light**)ctx->scene.env.lights.items)[j]->idx = j;
-			ctx->bn_stride = (BN_CO_U + ((ctx->scene.env.lights.total + 1) * 2) + 3) & ~3;
-			break;
+	if (ctx->editor.is_selected_light) {
+		for (uint32_t i = 0; i < ctx->scene.env.lights.total; ++i) {
+			t_light* light = ctx->scene.env.lights.items[i];
+			if (light->obj == obj) {
+				vector_del2(&ctx->scene.env.lights, light);
+				for (uint32_t j = 0; j < ctx->scene.env.lights.total; ++j)
+					((t_light**)ctx->scene.env.lights.items)[j]->idx = j;
+				ctx->bn_stride = (BN_CO_U + ((ctx->scene.env.lights.total + 1) * 2) + 3) & ~3;
+				break;
+			}
 		}
 	}
 	vector_del2(&ctx->scene.geo.objs, obj);
-	init_bvh(ctx);
 	return true;
 }
 
@@ -106,7 +90,10 @@ bool dup_object(t_context* ctx) {
 		pthread_cond_wait(&r->cond, &r->mutex);
 
 	deselect_object(ctx);
-	add_object(ctx, obj, true);
+	if (ctx->editor.is_selected_light)
+		dup_light(ctx, obj);
+	else
+		add_object(ctx, obj, true);
 
 	ctx->editor.orig_transform = ctx->editor.selected_obj->transform;
 	begin_edit_action(ctx, EDIT_TRANSLATE);

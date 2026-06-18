@@ -37,7 +37,8 @@ static inline t_vec3 direct_lighting_editing(const t_context* ctx, t_path* path,
 	float adaptive_bias = bias * fmaxf(1.0f, 1.0f / fmaxf(path->ndotl, 0.05f));
 	t_vec3 hit_biased = vec3_add(path->hit.point, vec3_scale(path->hit.geo_normal, adaptive_bias));
 
-	dist = dist - light->radius;
+	t_vec3 biased_to_l_center = vec3_sub(light->obj->transform.pos, hit_biased);
+	dist = vec3_length(biased_to_l_center) - light->radius;
 	if (hit_shadow(ctx, path, hit_biased, dist - fmaxf(B_EPSILON, dist * G_EPSILON)))
 		return g_zero;
 

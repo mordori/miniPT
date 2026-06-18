@@ -15,7 +15,7 @@ void init_scene(t_context* ctx) {
 	vector_try_init(ctx, &ctx->scene.assets.materials, false, free);
 	lut_srgb_to_linear();
 
-	t_material mat = { //
+	t_material mat_default = { //
 		.is_emissive = false,
 		.emission_color = g_one,
 		.emission_strength = 1.0f,
@@ -26,7 +26,21 @@ void init_scene(t_context* ctx) {
 		.normal_strength = 1.0f,
 		.is_double_sided = true
 	};
-	new_material(ctx, &mat);
+	new_material(ctx, &mat_default);
+
+	t_material mat_default_emissive = { //
+		.is_emissive = true,
+		.emission_color = g_one,
+		.emission_strength = 10.0f,
+		.emission = vec3_scale(g_one, 50.0f),
+		.albedo = (t_vec3){ { 0.5f, 0.5f, 0.5f, 1.0f } },
+		.roughness = 0.5f,
+		.ior = 1.4f,
+		.normal_strength = 1.0f,
+		.is_double_sided = true,
+		.flags = FLAG_OBJ_HIDDEN_CAM
+	};
+	new_material(ctx, &mat_default_emissive);
 
 	load_mesh_dir(ctx, "assets/models");
 
@@ -44,18 +58,18 @@ void init_scene(t_context* ctx) {
 	ctx->scene.cam.exposure = 1.0f;
 	init_camera(ctx, pos, dir, 27.0f);
 
-	t_material mat1 = { //
+	t_material mat2 = { //
 		.is_emissive = true,
 		.emission_strength = 1000.0f,
-		.emission_color = vec3_n(1.0f),
-		.emission = vec3_scale(vec3_n(1.0f), 1000.0f),
+		.emission_color = g_one,
+		.emission = vec3_scale(g_one, 1000.0f),
 		.albedo = g_one,
 		.normal_strength = 1.0f,
 		.flags = 2
 	};
-	new_material(ctx, &mat1);
+	new_material(ctx, &mat2);
 
-	t_material mat2 = { //
+	t_material mat3 = { //
 		.is_emissive = false,
 		.emission_color = g_one,
 		.emission_strength = 1.0f,
@@ -66,14 +80,14 @@ void init_scene(t_context* ctx) {
 		.normal_strength = 1.0f,
 		.is_double_sided = true
 	};
-	new_material(ctx, &mat2);
+	new_material(ctx, &mat3);
 
 	t_light light = { //
 		.intensity = 1.0f,
 		.radius = 30000.0f
 	};
 	pos = vec3(705000.0f, 485000.0f, 520000.0f);
-	init_point_light(ctx, &light, 1, pos);
+	init_point_light(ctx, &light, 2, pos);
 	ctx->scene.cam.directional_light.obj->flags |= FLAG_OBJ_HIDDEN_CAM;
 
 	ctx->scene.env.ambient = vec3(0.22f, 0.29f, 0.4f);
@@ -81,7 +95,7 @@ void init_scene(t_context* ctx) {
 
 	ctx->scene.env.bg_mode = BG_IMAGE;
 
-	add_mesh(ctx, "suzanne.obj", 2, false);
+	add_mesh(ctx, "suzanne.obj", 3, false);
 
 	t_vec3 initial_pos = { { 704000.0f, 484000.0f, 520000.0f, 0.0f } };
 	ctx->scene.cam.skydome_uv_offset.u = 0.5f;
@@ -104,7 +118,7 @@ void init_scene(t_context* ctx) {
 
 void clean_scene(t_context* ctx) {
 	free(ctx->scene.geo.bvh_nodes);
-	if (ctx->scene.env.has_dir_light && ctx->scene.cam.directional_light.obj)
+	if (ctx->scene.cam.directional_light.obj)
 		free(ctx->scene.cam.directional_light.obj);
 	vector_free(&ctx->scene.geo.objs, &ctx->scene.env.lights, &ctx->scene.assets.materials, NULL);
 	free_texture(&ctx->scene.env.skydome);

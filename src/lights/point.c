@@ -1,5 +1,6 @@
 #include <stddef.h>
 
+#include "defines.h"
 #include "lib_math.h"
 #include "lights.h"
 #include "objects.h"
@@ -7,6 +8,59 @@
 #include "utils.h"
 
 static inline void init_dir_light(t_context* ctx, t_light* light, t_object* obj);
+
+void add_light(t_context* ctx, uint32_t mat_id, bool is_selected) {
+	t_light* light = try_malloc(ctx, sizeof(t_light));
+
+	t_material* mat = ((t_material**)ctx->scene.assets.materials.items)[mat_id];
+	light->emission = mat->emission;
+	light->max_radiance = MAX_RADIANCE;
+	light->intensity = 1.0f;
+	light->radius = 0.1f;
+	light->radius_sq = light->radius * light->radius;
+
+	t_object obj = { //
+		.type = OBJ_SPHERE,
+		.transform.pos = (t_vec3){ { 0.0f, 1.1f, 0.0f, 1.0f } },
+		.shape.sphere.radius = light->radius,
+		.shape.sphere.radius_sq = light->radius_sq,
+		.material_id = mat_id,
+		.flags = mat->flags
+	};
+
+	add_object(ctx, &obj, is_selected);
+
+	if (is_selected) {
+		light->obj = ctx->editor.selected_obj;
+		ctx->editor.is_selected_light = true;
+	} else {
+		light->obj = (t_object*)vector_getlast(&ctx->scene.geo.objs);
+	}
+
+	vector_try_add(ctx, &ctx->scene.env.lights, light);
+	light->idx = (uint32_t)ctx->scene.env.lights.total - 1;
+	ctx->bn_stride = (BN_CO_U + ((ctx->scene.env.lights.total + 1) * 2) + 3) & ~3;
+}
+
+void dup_light(t_context* ctx, t_object* obj) {
+	t_light* light = try_malloc(ctx, sizeof(t_light));
+
+	for (uint32_t i = 0; i < ctx->scene.env.lights.total; ++i) {
+		t_light* l = ((t_light**)ctx->scene.env.lights.items)[i];
+		if (l->obj == obj) {
+			*light = *l;
+			break;
+		}
+	}
+
+	add_object(ctx, obj, true);
+	light->obj = ctx->editor.selected_obj;
+	ctx->editor.is_selected_light = true;
+
+	vector_try_add(ctx, &ctx->scene.env.lights, light);
+	light->idx = (uint32_t)ctx->scene.env.lights.total - 1;
+	ctx->bn_stride = (BN_CO_U + ((ctx->scene.env.lights.total + 1) * 2) + 3) & ~3;
+}
 
 void init_point_light(t_context* ctx, t_light* light, uint32_t mat_id, t_vec3 pos) {
 	t_light* l = try_malloc(ctx, sizeof(*l));

@@ -1,8 +1,6 @@
 #ifndef UI_HPP
 #define UI_HPP
 
-#include "defines.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

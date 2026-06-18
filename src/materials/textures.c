@@ -1,30 +1,35 @@
+#include <stdint.h>
+
+#include "MLX42.h"
+#include "defines.h"
+#include "lib_math.h"
 #include "materials.h"
 #include "utils.h"
 
-static inline void tex_to_linear(t_texture* texture, bool is_srgb);
+static inline void tex_to_linear(t_texture* texture, uint8_t* src, bool is_srgb);
 
 static float g_lut[256];
 
 t_texture load_texture(t_context* ctx, char* file, bool is_srgb) {
 	printf("\033[1;33mLoading texture:    %s\033[0m\n", file);
-	t_texture texture = (t_texture){ 0 };
-	texture.tex = mlx_load_png(file);
-	if (!texture.tex)
+	t_texture tex = (t_texture){ 0 };
+	mlx_texture_t* mlx_tex = mlx_load_png(file);
+	if (!mlx_tex)
 		fatal_error(ctx, errors(ERR_TEX), __FILE__, __LINE__);
 
-	if (!is_pot(texture.tex->width) || !is_pot(texture.tex->height))
+	if (!is_pot(mlx_tex->width) || !is_pot(mlx_tex->height))
 		fatal_error(ctx, errors(ERR_TEXNPOT), __FILE__, __LINE__);
 
-	size_t size = (sizeof(float) * texture.tex->width * texture.tex->height * 4);
-	texture.pixels = try_aligned_alloc(ctx, 64, size);
-	texture.width = texture.tex->width;
-	texture.height = texture.tex->height;
-	tex_to_linear(&texture, is_srgb);
-	return texture;
+	size_t size = (sizeof(float) * mlx_tex->width * mlx_tex->height * 4);
+	tex.pixels = try_aligned_alloc(ctx, 64, size);
+	tex.width = mlx_tex->width;
+	tex.height = mlx_tex->height;
+	tex_to_linear(&tex, mlx_tex->pixels, is_srgb);
+	mlx_delete_texture(mlx_tex);
+	return tex;
 }
 
-static inline void tex_to_linear(t_texture* texture, bool is_srgb) {
-	uint8_t* src = texture->tex->pixels;
+static inline void tex_to_linear(t_texture* texture, uint8_t* src, bool is_srgb) {
 	float* dst = texture->pixels;
 	float* end = dst + (texture->width * texture->height * 4);
 	if (is_srgb) {
@@ -38,8 +43,6 @@ static inline void tex_to_linear(t_texture* texture, bool is_srgb) {
 		while (dst < end)
 			*dst++ = (((float)(*src++)) * M_1_255f);
 	}
-	mlx_delete_texture(texture->tex);
-	texture->tex = NULL;
 }
 
 void lut_srgb_to_linear(void) {
@@ -56,46 +59,19 @@ void lut_srgb_to_linear(void) {
 }
 
 void free_texture(t_texture* texture) {
-	if (texture->tex)
-		mlx_delete_texture(texture->tex);
 	if (texture->pixels)
 		free(texture->pixels);
 }
 
-static inline t_vec3 get_texel(const float* pixels, uint32_t idx) {
-	const float* p = __builtin_assume_aligned(pixels, 64);
-	t_vec3 result;
-	memcpy(&result, &p[idx], sizeof(t_vec3));
-	return result;
-}
-
-static inline void compute_bilinear_coords(const t_texture* tex, t_vec2 uv, uint32_t* coords, float* weights) {
+t_vec3 sample_texture(const t_texture* tex, t_vec2 uv) {
 	uv.u = uv.u - floorf(uv.u);
 	uv.v = uv.v - floorf(uv.v);
-	uint32_t mask_x = tex->width - 1;
-	uint32_t mask_y = tex->height - 1;
-	float px = uv.u * (float)tex->width;
-	float py = uv.v * (float)tex->height;
-	coords[0] = (uint32_t)px & mask_x;
-	coords[1] = (uint32_t)py & mask_y;
-	coords[2] = (coords[0] + 1) & mask_x;
-	coords[3] = (coords[1] + 1) & mask_y;
-	weights[0] = px - (uint32_t)px;
-	weights[1] = py - (uint32_t)py;
-}
-
-t_vec3 sample_texture(const t_texture* tex, t_vec2 uv) {
-	uint32_t coords[4];
-	float weights[2];
-
-	compute_bilinear_coords(tex, uv, coords, weights);
-	coords[1] *= (tex->width << 2);
-	coords[3] *= (tex->width << 2);
-	coords[0] <<= 2;
-	coords[2] <<= 2;
-	t_vec3 top = vec3_lerp(get_texel(tex->pixels, coords[1] + coords[0]), get_texel(tex->pixels, coords[1] + coords[2]), weights[0]);
-	t_vec3 bottom = vec3_lerp(get_texel(tex->pixels, coords[3] + coords[0]), get_texel(tex->pixels, coords[3] + coords[2]), weights[0]);
-	return vec3_lerp(top, bottom, weights[1]);
+	t_vec3 color;
+	uint32_t x = (uint32_t)(uv.u * (float)tex->width) % tex->width;
+	uint32_t y = (uint32_t)(uv.v * (float)tex->height) % tex->height;
+	uint32_t idx = (uint32_t)(y * tex->width + x) * 4;
+	memcpy(&color, &tex->pixels[idx], sizeof(t_vec3));
+	return color;
 }
 
 t_vec3 get_surface_color(const t_material* mat, const t_hit* hit) {
